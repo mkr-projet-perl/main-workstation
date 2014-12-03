@@ -59,6 +59,9 @@ sub _headCorrectRegistryKey {
 	
 }
 
+use constant KEY_READ32 => 0x0100;
+use constant KEY_READ64 => 0x0200;
+
 sub _openKey {
 	my ($self,$key,$key_way) = @_;
 	my $registry_key;
@@ -90,39 +93,43 @@ sub _getValue {
 }
 
 #####################################
-# Méthode publiques
+# Méthodes publiques
 #####################################
+
+sub scanRegistry {
+	my ($self, $refPathList, $savedRegistry) = @_;
+	foreach my $crt_path (@$refPathList) {
+		if((my $crt_key = $self->_open($crt_path, KEY_READ|KEY_READ64))) {
+			if(ref($crt_key) eq "SCALAR") {
+				
+			} elsif(ref($crt_key) eq "HASH") {
+				
+			}
+			$self->_close($crt_key);
+		} else {
+			$self->_error();
+		}
+	}
+}
 
 sub readRegistryKey {
 	my ($self, $key) = @_;
-	if($self->_getRegistryKey()) {
-		$self->_setRegistryKey(undef);
-	}
-	if((my $registry_key = $self->_openKey($key, KEY_READ))) {
-		my $obj = RegistryKey->new({
-			root				=> '',
-			registryKeyName		=> $self->_getValue($registry_key, 'DisplayName'),
-			registryKeyValues	=> {
-				_installLocation	=> $self->_getValue($registry_key, 'InstallLocation'),
-				_uninstallString	=> $self->_getValue($registry_key, 'UninstallString'),
-				_displayIcon		=> $self->_getValue($registry_key, 'DisplayIcon')				
-			}
-		});
-		$self->_setRegistryKey($obj);
-		$self->_closeKey($registry_key);
-		return $self->_getRegistryKey();
-	} else {
-		$self->_error();
-	}
-	return undef;
 }
 
-sub writeRegistryKey {
+sub writeRegistry {
 	my ($self, $key) = @_;
 }
 
-sub deleteRegistryKey {
+sub deleteRegistry {
 	my ($self, $key) = @_;
+}
+
+sub deleteRegistryKeyValues {
+	my ($self, $key, $values) = @_;
+}
+
+sub updateRegistryKey {
+	my ($self, $key, $values) = @_;
 }
 
 1;
