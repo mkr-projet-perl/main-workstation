@@ -147,15 +147,6 @@ sub _scanRegistry {
 	_closeKey($opened_key);
 }
 
-sub _compareValue {
-	my ($keyValuesA, $keyValuesB) = @_;
-	my $isSame = 1;
-	$isSame = 0 if($keyValuesA->{'name'} ne $keyValuesB->{'name'});
-	$isSame = 0 if($keyValuesA->{'type'} != $keyValuesB->{'type'});
-	$isSame = 0 if($keyValuesA->{'data'} ne $keyValuesB->{'data'});
-	return $isSame;
-}
-
 sub _compareRegistryKey {
 	my ($valuesA, $valuesB) = @_;
 	my $isSame = 1;
@@ -174,6 +165,49 @@ sub _compareRegistryKey {
 	}
 	$isSame = 0 if(scalar(grep { !exists $valuesA->{$_} } keys(%$valuesB)));
 	return $isSame;
+}
+
+sub _installLocation {
+	my ($registryPath, $appName, $values) = @_;
+	my @installLocation;
+	$appName =~ tr/A-Z/a-z/;
+	my ($root, $key) = _transformRegistryString($registryPath);
+	my $opened_key = _openKey($root, $key, KEY_READ|0x0200);
+	my $nbSubKeys = _subKeyCounter($opened_key);
+	foreach (0..$nbSubKeys-1) {
+		my $subKeyName = _enumSubKeyName($opened_key, $_);
+		my $subOpenedKey = _openKey($opened_key, $subKeyName, KEY_READ|0x0200);
+		my $name = _getRegistryKeyValue($subOpenedKey, "DisplayName");
+		$name =~ tr/A-Z/a-z/;
+		if($appName eq $name) {
+			if(defined $values) {
+				foreach (@$values) {
+					my ($type, $data) = _getRegistryKeyValue($subOpenedKey, $_);
+					if(defined $data && $data ne '') {
+						push @installLocation, $data;
+					}
+				}
+			} else {
+				my ($type, $data) = _getRegistryKeyValue($subOpenedKey, "InstallLocation");
+				push @installLocation, $data if(defined $data);
+			}
+		}
+		_closeKey($subOpenedKey);
+	}
+	_closeKey($opened_key);
+	return \@installLocation;
+}
+
+sub installLocation {
+	my $appName = shift;
+	my $registryKeyPath32Bits = 'LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall';
+	my $registryKeyPath64Bits = 'LMachine/SOFTWARE/Wow6432Node/Microsoft/Windows/CurrentVersion/Uninstall';
+	my @values = qw(InstallLocation UninstallString DisplayIcon);
+	my $installLocation = _installLocation($registryKeyPath32Bits, $appName, \@values);
+	if(!defined $installLocation || $installLocation eq '') {
+		$installLocation = _installLocation($registryKeyPath64Bits, $appName, \@values);
+	}
+	return $installLocation;
 }
 
 sub scanRegistry {
@@ -217,11 +251,14 @@ sub diffRegistry {
 	return \%res;
 }
 
-my $res = scanRegistry("LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Applets");
-my $res2 = scanRegistry("LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Authentication");
+my $install = installLocation('rogue legacy');
+print Dumper($install);
 
-my $hash = diffRegistry($res, $res2);
-print Dumper($hash);
+#my $res = scanRegistry("LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Applets");
+#my $res2 = scanRegistry("LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Authentication");
+
+#my $hash = diffRegistry($res, $res2);
+#print Dumper($hash);
 
 #$res = scanRegistry("LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/");
 #print scalar(@$res)."\n";
