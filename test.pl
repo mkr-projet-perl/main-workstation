@@ -155,29 +155,29 @@ sub scanRegistry {
 
 sub diffRegistry {
 	my ($oldRegistry, $newRegistry) = @_;
-	my (@deleted, @updatings, @news); 
+	my (%deleted, %updatings, %news); 
 	my %res;
 	foreach (keys(%$oldRegistry)) {
 		if(!exists($newRegistry->{$_})) {
-			push @deleted, $oldRegistry->{$_};
+			$deleted{$_} = $oldRegistry->{$_};
 		} else {
 			#On regarde si elle a été modifiée (valeur, type, contenue)
 			my $values = $oldRegistry->{$_};
-			foreach (@$values) {
+			foreach (keys(%$values)) {
 				if(!_compareRegistryKey($oldRegistry->{$_}, $newRegistry->{$_})) {
-					push @updatings, $oldRegistry->{$_};
+					$updatings{$_} = $oldRegistry->{$_};
 				}
 			}
 		}
 	}
 	foreach (keys(%$newRegistry)) {
 		if(!exists($oldRegistry->{$_})) {
-			push @news, $newRegistry->{$_};
+			$news{$_} = $newRegistry->{$_};
 		}
 	}
-	$res{'delete'} = \@deleted;
-	$res{'update'} = \@updatings;
-	$res{'news'} = \@news;
+	$res{'delete'} = \%deleted;
+	$res{'update'} = \%updatings;
+	$res{'news'} = \%news;
 	return \%res;
 }
 my $res = scanRegistry("LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Applets");
