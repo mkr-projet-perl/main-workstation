@@ -158,10 +158,21 @@ sub _compareValue {
 
 sub _compareRegistryKey {
 	my ($valuesA, $valuesB) = @_;
-	my $isSame = 0;
-	foreach (@$valuesA) {
-		
+	my $isSame = 1;
+	foreach (keys(%$valuesA)) {
+		if(exists $valuesB->{$_}) {
+			if(!$valuesA->{$_}{'type'} eq $valuesB->{$_}{'type'}) {
+				$isSame = 0;
+			}
+			if(!$valuesA->{$_}{'data'} == $valuesB->{$_}{'data'} ||
+				!$valuesA->{$_}{'data'} eq $valuesB->{$_}{'data'}) {
+				$isSame = 0;		
+			}
+		} else {
+			$isSame = 0;
+		} 
 	}
+	$isSame = 0 if(scalar(grep { !exists $valuesA->{$_} } keys(%$valuesB)));
 	return $isSame;
 }
 
@@ -206,11 +217,11 @@ sub diffRegistry {
 	return \%res;
 }
 
-my $res = scanRegistry("LMachine/HARDWARE/DESCRIPTION/System");
+my $res = scanRegistry("LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Applets");
 my $res2 = scanRegistry("LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Authentication");
-print Dumper($res);
-#my $hash = diffRegistry($res, $res2);
-#print Dumper($hash);
+
+my $hash = diffRegistry($res, $res2);
+print Dumper($hash);
 
 #$res = scanRegistry("LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/");
 #print scalar(@$res)."\n";
