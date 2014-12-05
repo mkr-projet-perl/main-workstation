@@ -64,6 +64,19 @@ sub _transformRegistryString {
 	return ($root, $key);
 }
 
+sub _transformRegistryValue {
+	my ($type,$value) = @_;
+	my $newValue = $value;
+	if($type == 3) {
+		$newValue = unpack("B*", $value);
+	}elsif($type == 4) {
+		$newValue = unpack("H*", $value);
+	}elsif($type == 9) {
+		$newValue = unpack("H*", $value);
+	}
+	return $newValue;
+}
+
 sub _subKeyCounter {
 	my $opened_key = shift;
 	my $nbSubKeys;
@@ -108,8 +121,11 @@ sub _getAllRegistryKeyValues {
 	my %hash;
 	my $nbValues = _valueCounter($opened_key);
 	foreach (0..$nbValues-1) {
+		my %values;
 		my ($name, $type, $data) = _enumValue($opened_key, $_);
-		$hash{$name} = {'type' => $type, 'data' => $data};
+		$values{'type'} = $_valueType->{$type};
+		$values{'data'} = _transformRegistryValue($type, $data);
+		$hash{$name} = \%values;
 	}
 	return \%hash;
 }
@@ -190,7 +206,7 @@ sub diffRegistry {
 	return \%res;
 }
 
-my $res = scanRegistry("LMachine/HARDWARE/DESCRIPTION/System/MultifunctionAdapter");
+my $res = scanRegistry("LMachine/HARDWARE/DESCRIPTION/System");
 my $res2 = scanRegistry("LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Authentication");
 print Dumper($res);
 #my $hash = diffRegistry($res, $res2);
