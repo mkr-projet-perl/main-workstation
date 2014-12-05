@@ -31,6 +31,15 @@ my $_rootRegistryKey = {
 	"DynDat"	=> HKEY_DYN_DATA
 };
 
+my $_valueType = {
+	1	=> 'REG_SZ',
+	2	=> 'REG_EXPAND_SZ',
+	3	=> 'REG_BINARY',
+	4	=> 'REG_DWORD',
+	7	=> 'REG_MULTI_SZ',
+	9	=> 'REG_FULL_RESOURCE_DESCRIPTOR'
+};
+
 sub _transformRegistryString {
 	my $str = shift;
 	my ($root, $key);
@@ -115,10 +124,9 @@ sub _scanRegistry {
 			my $subKeyName = _enumSubKeyName($opened_key, $_);
 			_scanRegistry($opened_key, $subKeyName, $res);
 		}
-	} else {
-		my $values = _getAllRegistryKeyValues($opened_key);
-		$res->{$key} = $values;
 	}
+	my $values = _getAllRegistryKeyValues($opened_key);
+	$res->{$key} = $values;
 	_closeKey($opened_key);
 }
 
@@ -180,9 +188,10 @@ sub diffRegistry {
 	$res{'news'} = \%news;
 	return \%res;
 }
-my $res = scanRegistry("LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Applets");
+
+my $res = scanRegistry("LMachine/HARDWARE/DESCRIPTION/System");
 my $res2 = scanRegistry("LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Authentication");
-print Dumper($res2);
+print Dumper($res);
 #my $hash = diffRegistry($res, $res2);
 #print Dumper($hash);
 
