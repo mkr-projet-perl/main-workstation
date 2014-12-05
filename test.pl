@@ -96,13 +96,13 @@ sub _getRegistryKeyValue {
 
 sub _getAllRegistryKeyValues {
 	my $opened_key = shift;
-	my @tab;
+	my %hash;
 	my $nbValues = _valueCounter($opened_key);
 	foreach (0..$nbValues-1) {
 		my ($name, $type, $data) = _enumValue($opened_key, $_);
-		push @tab, {$name => {'type' => $type, 'data' => $data}};
+		$hash{$name} = {'type' => $type, 'data' => $data};
 	}
-	return \@tab;
+	return \%hash;
 }
 
 sub _scanRegistry {
