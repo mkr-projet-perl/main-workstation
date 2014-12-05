@@ -115,18 +115,19 @@ sub _getAllRegistryKeyValues {
 }
 
 sub _scanRegistry {
-	my ($root, $key, $res) = @_;
+	my ($root, $key, $res, $fullPath) = @_;
 	my ($opened_key, $nbSubKeys);
 	$opened_key = _openKey($root, $key, KEY_READ|0x0200);
 	$nbSubKeys = _subKeyCounter($opened_key);
 	if($nbSubKeys) {
 		foreach (0..$nbSubKeys-1) {
 			my $subKeyName = _enumSubKeyName($opened_key, $_);
-			_scanRegistry($opened_key, $subKeyName, $res);
+			_scanRegistry($opened_key, $subKeyName, $res, $fullPath."/".$subKeyName);
 		}
 	}
 	my $values = _getAllRegistryKeyValues($opened_key);
-	$res->{$key} = $values;
+	$fullPath =~ s/\\\\/\//g;
+	$res->{$fullPath} = $values;
 	_closeKey($opened_key);
 }
 
@@ -154,7 +155,7 @@ sub scanRegistry {
 	my %res;
 	print "$root\t$key\n";
 	if(defined $root) {
-		_scanRegistry($root, $key, \%res);
+		_scanRegistry($root, $key, \%res, $key);
 	} else {
 		print "$path n'est pas une clé valide\n";
 	}
@@ -189,7 +190,7 @@ sub diffRegistry {
 	return \%res;
 }
 
-my $res = scanRegistry("LMachine/HARDWARE/DESCRIPTION/System");
+my $res = scanRegistry("LMachine/HARDWARE/DESCRIPTION/System/MultifunctionAdapter");
 my $res2 = scanRegistry("LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Authentication");
 print Dumper($res);
 #my $hash = diffRegistry($res, $res2);
