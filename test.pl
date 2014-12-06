@@ -3,8 +3,7 @@ use strict;
 use Win32API::Registry 0.21 qw( :ALL );
 use Data::Dumper;
 
-use constant KEY_WOW64_64KEY => 0x0100;
-use constant KEY_WOW64_32KEY => 0x0200;
+use constant KEY_READ_ALL => KEY_READ|0x0200;
 
 sub _openKey {
 	my ($root, $key, $key_rights) = @_;
@@ -133,7 +132,7 @@ sub _getAllRegistryKeyValues {
 sub _scanRegistry {
 	my ($root, $key, $res, $fullPath) = @_;
 	my ($opened_key, $nbSubKeys);
-	$opened_key = _openKey($root, $key, KEY_READ|0x0200);
+	$opened_key = _openKey($root, $key, KEY_READ_ALL);
 	$nbSubKeys = _subKeyCounter($opened_key);
 	if($nbSubKeys) {
 		foreach (0..$nbSubKeys-1) {
@@ -167,16 +166,16 @@ sub _compareRegistryKey {
 	return $isSame;
 }
 
-sub _installLocation {
+sub _installInformation {
 	my ($registryPath, $appName, $values) = @_;
-	my @installLocation;
+	my %installLocation;
 	$appName =~ tr/A-Z/a-z/;
 	my ($root, $key) = _transformRegistryString($registryPath);
-	my $opened_key = _openKey($root, $key, KEY_READ|0x0200);
+	my $opened_key = _openKey($root, $key, KEY_READ_ALL);
 	my $nbSubKeys = _subKeyCounter($opened_key);
 	foreach (0..$nbSubKeys-1) {
 		my $subKeyName = _enumSubKeyName($opened_key, $_);
-		my $subOpenedKey = _openKey($opened_key, $subKeyName, KEY_READ|0x0200);
+		my $subOpenedKey = _openKey($opened_key, $subKeyName, KEY_READ_ALL);
 		my $name = _getRegistryKeyValue($subOpenedKey, "DisplayName");
 		$name =~ tr/A-Z/a-z/;
 		if($appName eq $name) {
@@ -184,18 +183,18 @@ sub _installLocation {
 				foreach (@$values) {
 					my ($type, $data) = _getRegistryKeyValue($subOpenedKey, $_);
 					if(defined $data && $data ne '') {
-						push @installLocation, $data;
+						$installLocation{$_} = $data;
 					}
 				}
 			} else {
 				my ($type, $data) = _getRegistryKeyValue($subOpenedKey, "InstallLocation");
-				push @installLocation, $data if(defined $data);
+				$installLocation{'InstallLocation'} = $data if(defined $data);
 			}
 		}
 		_closeKey($subOpenedKey);
 	}
 	_closeKey($opened_key);
-	return \@installLocation;
+	return \%installLocation;
 }
 
 sub installLocation {
@@ -203,9 +202,9 @@ sub installLocation {
 	my $registryKeyPath32Bits = 'LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall';
 	my $registryKeyPath64Bits = 'LMachine/SOFTWARE/Wow6432Node/Microsoft/Windows/CurrentVersion/Uninstall';
 	my @values = qw(InstallLocation UninstallString DisplayIcon);
-	my $installLocation = _installLocation($registryKeyPath32Bits, $appName, \@values);
+	my $installLocation = _installInformation($registryKeyPath32Bits, $appName, \@values);
 	if(!defined $installLocation || $installLocation eq '') {
-		$installLocation = _installLocation($registryKeyPath64Bits, $appName, \@values);
+		$installLocation = _installInformation($registryKeyPath64Bits, $appName, \@values);
 	}
 	return $installLocation;
 }
