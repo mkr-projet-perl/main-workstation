@@ -21,17 +21,8 @@ print scalar(keys(%res))."\n";
 my $exe = "C:\\Users\\romain\\Downloads\\npp.6.6.9.Installer.exe";
 my $save = Registre::scanRegistry("LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/");
 
-my $pid = open FILS, "-|";
-if(!defined $pid) {
-	die "Impossible de dupliquer le processus $!\n";
-} elsif($pid) {
-	#Ici le père
-	waitpid($pid, 0);
-	close FILS;
-} else {
-	#Ici le fils de ****
-	exec "$exe";
-}
+my $res = `$exe`;
+print $res;
 
 my $save2 = Registre::scanRegistry("LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/");
 my $diff = Registre::diffRegistry($save, $save2);
@@ -39,3 +30,6 @@ my $diff = Registre::diffRegistry($save, $save2);
 print "Delete\n".Dumper($diff->{'delete'});
 print "Update\n".Dumper($diff->{'updatings'});
 print "New\n".Dumper($diff->{'news'});
+
+my $installInforamtions = Registre::installLocation('notepad++');
+print Dumper($installInforamtions);
