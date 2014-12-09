@@ -7,12 +7,8 @@ use Data::Dumper;
 sub KEY_READ () { 131097 }
 sub KEY_WOW64_64KEY () { 131353 }
 sub KEY_WOW64_64KEY_W () { 131334 }
-sub KEY_READ_ALL () { Win32API::Registry::KEY_READ|KEY_WOW64_64KEY|0x0100 }
+sub KEY_READ_ALL () { Win32API::Registry::KEY_READ|KEY_WOW64_64KEY}
 sub KEY_WRITE () { Win32API::Registry::KEY_WRITE|KEY_WOW64_64KEY_W }
-
-Win32API::Registry::AllowPriv(Win32API::Registry::SE_SYSTEM_ENVIRONMENT_NAME, 1);
-Win32API::Registry::AllowPriv(Win32API::Registry::SE_SECURITY_NAME , 1);
-Win32API::Registry::AllowPriv(Win32API::Registry::SE_RESTORE_NAME , 1);
 
 sub _openKey {
 	my ($root, $key, $key_rights) = @_;
@@ -74,6 +70,7 @@ sub _transformRegistryString {
 
 sub _transformRegistryValue {
 	my ($type,$value) = @_;
+	return "" if(!defined $value);
 	my $newValue = $value;
 	if($type == 3) {
 		$newValue = unpack("B*", $value);
@@ -86,31 +83,31 @@ sub _transformRegistryValue {
 sub _subKeyCounter {
 	my $opened_key = shift;
 	my $nbSubKeys;
-	Win32API::Registry::RegQueryInfoKey($opened_key, [], [], [], $nbSubKeys, [], [], [], [], [], [], []);
-		# or die "RegQueryInfoKey impossible de compter le nombre sous-clefs".Win32API::Registry::regLastError()."\n";
+	Win32API::Registry::RegQueryInfoKey($opened_key, [], [], [], $nbSubKeys, [], [], [], [], [], [], [])
+		or die "RegQueryInfoKey impossible de compter le nombre sous-clefs".Win32API::Registry::regLastError()."\n";
 	return $nbSubKeys;
 }
 
 sub _valueCounter {
 	my $opened_key = shift;
 	my $nbValues;
-	Win32API::Registry::RegQueryInfoKey($opened_key, [], [], [], [], [], [], $nbValues, [], [], [], []); 
-		# or die "RegQueryInfoKey impossible de compter le nombre de valeurs".Win32API::Registry::regLastError()."\n";
+	Win32API::Registry::RegQueryInfoKey($opened_key, [], [], [], [], [], [], $nbValues, [], [], [], [])
+		or die "RegQueryInfoKey impossible de compter le nombre de valeurs".Win32API::Registry::regLastError()."\n";
 	return $nbValues;
 }
 
 sub _enumSubKeyName {
 	my ($opened_key, $index) = @_;
 	my $subKeyName;
-	Win32API::Registry::RegEnumKeyEx($opened_key, $_, $subKeyName, [], [], [], [], []);
+	Win32API::Registry::RegEnumKeyEx($opened_key, $index, $subKeyName, [], [], [], [], []);
 	return $subKeyName;
 }
 
 sub _enumValue {
 	my ($opened_key, $index) = @_;
 	my ($name, $type, $data);
-	Win32API::Registry::RegEnumValue($opened_key, $index, $name, [], [], $type, $data, []);
-		# or die "RegEnumValue impossible d'itérer sur les valeurs\n".Win32API::Registry::regLastError()."\n";
+	Win32API::Registry::RegEnumValue($opened_key, $index, $name, [], [], $type, $data, 0)
+		or die "RegEnumValue impossible de récupérer le nom, le type et le contenue de la valeur\n".Win32API::Registry::regLastError()."\n";
 	return ($name, $type, $data);
 }
 
@@ -139,7 +136,7 @@ sub _scanRegistry {
 	my ($root, $key, $res, $fullPath) = @_;
 	my ($opened_key, $nbSubKeys);
 	$opened_key = _openKey($root, $key, KEY_READ_ALL);
-	if($opened_key > 0 && defined $opened_key) {
+	if($opened_key) {
 		$nbSubKeys = _subKeyCounter($opened_key);
 		if($nbSubKeys) {
 			foreach (0..$nbSubKeys-1) {

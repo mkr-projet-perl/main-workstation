@@ -19,12 +19,12 @@ print scalar(keys(%res))."\n";
 =cut
 
 my $exe = "C:\\Users\\romain\\Downloads\\npp.6.6.9.Installer.exe";
-my $save = Registre::scanRegistry("LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/");
+my $save = Registre::scanRegistry("LMachine/SOFTWARE/Wow6432Node/Microsoft/Windows/CurrentVersion/Uninstall/");
 print "Nombre de clefs avant installation ".scalar(keys(%$save))."\n";
 
 system($exe);
 
-my $save2 = Registre::scanRegistry("LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/");
+my $save2 = Registre::scanRegistry("LMachine/SOFTWARE/Wow6432Node/Microsoft/Windows/CurrentVersion/Uninstall/");
 print "Nombre de clefs après installation ".scalar(keys(%$save2))."\n";
 my $diff = Registre::diffRegistry($save, $save2);
 
