@@ -7,37 +7,35 @@ sub giveFilesInDirectory {
 	my $hash = shift || {};
 	if(ref($dir) eq "ARRAY") {
 		foreach my $crt_path (@$dir) {
-			my %hashDir;
+			my @list;
 			opendir (CRT_DIR, $crt_path)
 				or die "Impossible d'ouvrir le répertoire $crt_path $!\n";
 			my @files = grep {!/^\.\.?$/} readdir CRT_DIR;
 			close CRT_DIR;
 			foreach(@files) {
 				if (-d "$crt_path\\$_") {
-					$hashDir{"$crt_path\\$_"} = "d";
 					giveFilesInDirectory("$crt_path\\$_", $hash);
 				}
 				else {
-					$hashDir{"$crt_path\\$_"} = "f";
+					push @list, "$crt_path\\$_";
 				}
 			}
-			$hash->{$crt_path} = \%hashDir;
+			$hash->{$crt_path} = \@list;
 		}
 	} else {
-		my %hashDir;
+		my @list;
 		opendir(CRT_DIR, $dir)
 			or die "Impossible d'ouvrir le répertoire $dir $!\n";
 		my @files = grep {!/^\.\.?$/} readdir CRT_DIR;
 		close(CRT_DIR);
 		foreach (@files) {
 			if (-d "$dir\\$_") {
-				$hashDir{"$dir\\$_"} = "d";
 				giveFilesInDirectory("$dir\\$_", $hash);
 			} else {
-				$hashDir{"$dir\\$_"} = "f";
+				push @list,  "$dir\\$_";
 			}
 		}
-		$hash->{$dir} = \%hashDir;
+		$hash->{$dir} = \@list;
 	}
 }
 1;

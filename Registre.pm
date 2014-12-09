@@ -1,19 +1,15 @@
 #!C:\Strawberry\perl\bin\perl -w
 package Registre;
-require Exporter;
 use strict;
 use Win32API::Registry 0.21 qw( :ALL );
 use Data::Dumper;
-our @ISA = qw(Exporter);
-our @EXPORT_OK = qw(&installLocation &scanRegistry &diffRegistry);
 
-use constant KEY_READ_ALL => KEY_READ|0x0200;
+use constant KEY_READ_ALL => KEY_READ|0x0100;
 
 sub _openKey {
 	my ($root, $key, $key_rights) = @_;
 	my $registry_key;
-	RegOpenKeyEx($root, $key, 0, $key_rights, $registry_key)
-		or die "RegOpenKeyEx impossible d'ouvrir $root\\$key\n".regLastError()."\n";
+	RegOpenKeyEx($root, $key, 0, $key_rights, $registry_key);
 	return $registry_key;
 }
 
@@ -72,9 +68,7 @@ sub _transformRegistryValue {
 	my $newValue = $value;
 	if($type == 3) {
 		$newValue = unpack("B*", $value);
-	}elsif($type == 4) {
-		$newValue = unpack("H*", $value);
-	}elsif($type == 9) {
+	}elsif($type == 4 || $type == 9) {
 		$newValue = unpack("H*", $value);
 	}
 	return $newValue;
@@ -137,17 +131,21 @@ sub _scanRegistry {
 	my ($root, $key, $res, $fullPath) = @_;
 	my ($opened_key, $nbSubKeys);
 	$opened_key = _openKey($root, $key, KEY_READ_ALL);
-	$nbSubKeys = _subKeyCounter($opened_key);
-	if($nbSubKeys) {
-		foreach (0..$nbSubKeys-1) {
-			my $subKeyName = _enumSubKeyName($opened_key, $_);
-			_scanRegistry($opened_key, $subKeyName, $res, $fullPath."/".$subKeyName);
+	if($opened_key) {
+		$nbSubKeys = _subKeyCounter($opened_key);
+		if($nbSubKeys) {
+			foreach (0..$nbSubKeys-1) {
+				my $subKeyName = _enumSubKeyName($opened_key, $_);
+				_scanRegistry($opened_key, $subKeyName, $res, $fullPath."/".$subKeyName);
+			}
 		}
+		my $values = _getAllRegistryKeyValues($opened_key);
+		$fullPath =~ s/\\\\/\//g;
+		$res->{$fullPath} = $values;
+		_closeKey($opened_key);
+	} else {
+		print "RegOpenKeyEx impossible d'ouvrir $root\\$key\n".regLastError()."\n";
 	}
-	my $values = _getAllRegistryKeyValues($opened_key);
-	$fullPath =~ s/\\\\/\//g;
-	$res->{$fullPath} = $values;
-	_closeKey($opened_key);
 }
 
 sub _compareRegistryKey {
@@ -203,8 +201,8 @@ sub _installInformation {
 
 sub installLocation {
 	my $appName = shift;
-	my $registryKeyPath32Bits = 'LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall';
-	my $registryKeyPath64Bits = 'LMachine/SOFTWARE/Wow6432Node/Microsoft/Windows/CurrentVersion/Uninstall';
+	my $registryKeyPath32Bits = 'LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/';
+	my $registryKeyPath64Bits = 'LMachine/SOFTWARE/Wow6432Node/Microsoft/Windows/CurrentVersion/Uninstall/';
 	my @values = qw(InstallLocation UninstallString DisplayIcon);
 	my $installLocation = _installInformation($registryKeyPath32Bits, $appName, \@values);
 	if(!defined $installLocation || $installLocation eq '') {
@@ -273,8 +271,8 @@ sub _deleteValues {
 #my $install = installLocation('rogue legacy');
 #print Dumper($install);
 
-#my $res = scanRegistry("LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Applets");
-#my $res2 = scanRegistry("LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Authentication");
+# my $res = scanRegistry("LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Applets");
+# my $res2 = scanRegistry("LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Authentication");
 
 #my $hash = diffRegistry($res, $res2);
 #print Dumper($hash);
@@ -289,3 +287,5 @@ sub _deleteValues {
 #print Dumper(_transformRegistryString("LMachine"));
 #print Dumper(_transformRegistryString("LMachine/SOFTWARE"));
 #print Dumper(_transformRegistryString("LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall"));
+1;
+__END__
