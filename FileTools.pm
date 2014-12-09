@@ -1,4 +1,4 @@
-#!C:\Strawberry\perl\bin\perl -w
+#!C:\Dwimperl\perl\bin\perl -w
 package FileTools;
 use strict;
 

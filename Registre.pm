@@ -1,33 +1,42 @@
-#!C:\Strawberry\perl\bin\perl -w
+#!C:\Dwimperl\perl\bin\perl -w
 package Registre;
 use strict;
-use Win32API::Registry 0.21 qw( :ALL );
+use Win32API::Registry 0.24;
 use Data::Dumper;
 
-use constant KEY_READ_ALL => KEY_READ|0x0100;
+sub KEY_READ () { 131097 }
+sub KEY_WOW64_64KEY () { 131353 }
+sub KEY_WOW64_64KEY_W () { 131334 }
+sub KEY_READ_ALL () { Win32API::Registry::KEY_READ|KEY_WOW64_64KEY|0x0100 }
+sub KEY_WRITE () { Win32API::Registry::KEY_WRITE|KEY_WOW64_64KEY_W }
+
+Win32API::Registry::AllowPriv(Win32API::Registry::SE_SYSTEM_ENVIRONMENT_NAME, 1);
+Win32API::Registry::AllowPriv(Win32API::Registry::SE_SECURITY_NAME , 1);
+Win32API::Registry::AllowPriv(Win32API::Registry::SE_RESTORE_NAME , 1);
 
 sub _openKey {
 	my ($root, $key, $key_rights) = @_;
 	my $registry_key;
-	RegOpenKeyEx($root, $key, 0, $key_rights, $registry_key);
+	Win32API::Registry::RegOpenKeyEx($root, $key, 0, $key_rights, $registry_key);
+		# or die "RegOpenKeyEx $root\\$key\n".Win32API::Registry::regLastError()."\n";
 	return $registry_key;
 }
 
 sub _closeKey {
 	 my $key = shift;
-	 RegCloseKey($key)
-	 	or die "RegCloseKey $key\n".regLastError()."\n";
+	 Win32API::Registry::RegCloseKey($key)
+	 	or die "RegCloseKey $key\n".Win32API::Registry::regLastError()."\n";
  	return 1;
 }
 
 my $_rootRegistryKey = {
-	"LMachine"	=> HKEY_LOCAL_MACHINE,
-	"Classes"	=> HKEY_CLASSES_ROOT,
-	"CUser"		=> HKEY_CURRENT_USER,
-	"Users"		=> HKEY_USERS,
-	"CConfig"	=> HKEY_CURRENT_CONFIG,
-	"PerfData"	=> HKEY_PERFORMANCE_DATA,
-	"DynDat"	=> HKEY_DYN_DATA
+	"LMachine"	=> Win32API::Registry::HKEY_LOCAL_MACHINE,
+	"Classes"	=> Win32API::Registry::HKEY_CLASSES_ROOT,
+	"CUser"		=> Win32API::Registry::HKEY_CURRENT_USER,
+	"Users"		=> Win32API::Registry::HKEY_USERS,
+	"CConfig"	=> Win32API::Registry::HKEY_CURRENT_CONFIG,
+	"PerfData"	=> Win32API::Registry::HKEY_PERFORMANCE_DATA,
+	"DynDat"	=> Win32API::Registry::HKEY_DYN_DATA
 };
 
 my $_valueType = {
@@ -77,39 +86,38 @@ sub _transformRegistryValue {
 sub _subKeyCounter {
 	my $opened_key = shift;
 	my $nbSubKeys;
-	RegQueryInfoKey($opened_key, [], [], [], $nbSubKeys, [], [], [], [], [], [], []) 
-		or die "RegQueryInfoKey impossible de compter le nombre sous-clefs".regLastError()."\n";
+	Win32API::Registry::RegQueryInfoKey($opened_key, [], [], [], $nbSubKeys, [], [], [], [], [], [], []);
+		# or die "RegQueryInfoKey impossible de compter le nombre sous-clefs".Win32API::Registry::regLastError()."\n";
 	return $nbSubKeys;
 }
 
 sub _valueCounter {
 	my $opened_key = shift;
 	my $nbValues;
-	RegQueryInfoKey($opened_key, [], [], [], [], [], [], $nbValues, [], [], [], []) 
-		or die "RegQueryInfoKey impossible de compter le nombre de valeurs".regLastError()."\n";
+	Win32API::Registry::RegQueryInfoKey($opened_key, [], [], [], [], [], [], $nbValues, [], [], [], []); 
+		# or die "RegQueryInfoKey impossible de compter le nombre de valeurs".Win32API::Registry::regLastError()."\n";
 	return $nbValues;
 }
 
 sub _enumSubKeyName {
 	my ($opened_key, $index) = @_;
 	my $subKeyName;
-	RegEnumKeyEx($opened_key, $_, $subKeyName, [], [], [], [], []) 
-		or die "RegEnumKeyEx impossible d'itérer sur les sous-clefs".regLastError()."\n";
+	Win32API::Registry::RegEnumKeyEx($opened_key, $_, $subKeyName, [], [], [], [], []);
 	return $subKeyName;
 }
 
 sub _enumValue {
 	my ($opened_key, $index) = @_;
 	my ($name, $type, $data);
-	RegEnumValue($opened_key, $index, $name, [], [], $type, $data, [])
-		or die "RegEnumValue impossible d'itérer sur les valeurs".regLastError()."\n";
+	Win32API::Registry::RegEnumValue($opened_key, $index, $name, [], [], $type, $data, []);
+		# or die "RegEnumValue impossible d'itérer sur les valeurs\n".Win32API::Registry::regLastError()."\n";
 	return ($name, $type, $data);
 }
 
 sub _getRegistryKeyValue {
 	my ($opened_key, $value) = @_;
 	my ($type, $data);
-	RegQueryValueEx($opened_key, $value, [], $type, $data, []);
+	Win32API::Registry::RegQueryValueEx($opened_key, $value, [], $type, $data, []);
 	return ($type, $data);
 }
 
@@ -131,20 +139,20 @@ sub _scanRegistry {
 	my ($root, $key, $res, $fullPath) = @_;
 	my ($opened_key, $nbSubKeys);
 	$opened_key = _openKey($root, $key, KEY_READ_ALL);
-	if($opened_key) {
+	if($opened_key > 0 && defined $opened_key) {
 		$nbSubKeys = _subKeyCounter($opened_key);
 		if($nbSubKeys) {
 			foreach (0..$nbSubKeys-1) {
 				my $subKeyName = _enumSubKeyName($opened_key, $_);
-				_scanRegistry($opened_key, $subKeyName, $res, $fullPath."/".$subKeyName);
+				if($subKeyName) {
+					_scanRegistry($opened_key, $subKeyName, $res, $fullPath."/".$subKeyName);
+				}
 			}
 		}
 		my $values = _getAllRegistryKeyValues($opened_key);
 		$fullPath =~ s/\\\\/\//g;
 		$res->{$fullPath} = $values;
 		_closeKey($opened_key);
-	} else {
-		print "RegOpenKeyEx impossible d'ouvrir $root\\$key\n".regLastError()."\n";
 	}
 }
 
