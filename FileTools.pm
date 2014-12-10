@@ -23,6 +23,7 @@ sub giveFilesInDirectory {
 			$hash->{$crt_path} = \@list;
 		}
 	} else {
+		return $dir if(-f $dir);
 		my @list;
 		opendir(CRT_DIR, $dir)
 			or die "Impossible d'ouvrir le répertoire $dir $!\n";

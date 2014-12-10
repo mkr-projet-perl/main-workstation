@@ -8,7 +8,7 @@ sub KEY_READ () { 131097 }
 sub KEY_WOW64_64KEY () { 131353 }
 sub KEY_WOW64_64KEY_W () { 131334 }
 sub KEY_READ_ALL () { Win32API::Registry::KEY_READ|KEY_WOW64_64KEY}
-sub KEY_WRITE () { Win32API::Registry::KEY_WRITE|KEY_WOW64_64KEY_W }
+sub KEY_WRITE_ALL () { Win32API::Registry::KEY_WRITE|KEY_WOW64_64KEY_W }
 
 sub _openKey {
 	my ($root, $key, $key_rights) = @_;
@@ -176,7 +176,6 @@ sub _compareRegistryKey {
 sub _installInformation {
 	my ($registryPath, $appName, $values) = @_;
 	my %installLocation;
-	$appName =~ tr/A-Z/a-z/;
 	my ($root, $key) = _transformRegistryString($registryPath);
 	my $opened_key = _openKey($root, $key, KEY_READ_ALL);
 	my $nbSubKeys = _subKeyCounter($opened_key);
@@ -206,6 +205,7 @@ sub _installInformation {
 
 sub installLocation {
 	my $appName = shift;
+	$appName =~ tr/A-Z/a-z/;
 	my $registryKeyPath32Bits = 'LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/';
 	my $registryKeyPath64Bits = 'LMachine/SOFTWARE/Wow6432Node/Microsoft/Windows/CurrentVersion/Uninstall/';
 	my @values = qw(InstallLocation UninstallString DisplayIcon);
@@ -257,40 +257,107 @@ sub diffRegistry {
 	return \%res;
 }
 
+##############################################################################
+##############################################################################
+#	Gestion des clés de registre (création, suppression et modification)
+##############################################################################
+##############################################################################
+
 sub _createKey {
-	my ($keyPath, $values) = @_;	
+	my ($opened_key, $newSubKey) = @_;
+	my $newKey;
+	#Mettre les bons droits à la place de $uAccess
+	Win32API::Registry::RegCreateKeyEx($opened_key, $newSubKey, 0, "", [], $uAccess, [], $newKey, Win32API::Registry::REG_CREATED_NEW_KEY)
+		or die "Impossible de créer une clé $newSubKey\n".Win32API::Registry::regLastError()."\n";
+	return $newKey;
 }
 
-sub _replaceKey {
-	my ($keyPath, $values) = @_;
+sub _setKeyValue {
+	my ($opened_key, $value, $type, $data) = @_;
+	Win32API::Registry::RegSetValueEx( $opened_key, $value, 0, $type, $data, 0)
+		or die "Impossible de créer la valeur $value pour la clé $opened_key\n".Win32API::Registry::regLastError()."\n";
+	return 1;
 }
 
 sub _deleteKey {
-	my ($keyPath) = @_;
+	my ($opened_key, $subKey) = @_;
+	Win32API::Registry::RegDeleteKey($opened_key, $subKey)
+		or die "Impossible de supprimer la clé $subKey\n".Win32API::Registry::regLastError()."\n";
+	return 1;
 }
 
 sub _deleteValues {
-	my ($keyPath, $values) = @_;
+	my ($opened_key, $value) = @_;
+	Win32API::Registry::RegDeleteValue($opened_key, $value)
+		or die "Impossible de supprimer la valeur $value de la clé $opened_key\n".Win32API::Registry::regLastError()."\n";
+	return 1;
 }
 
-#my $install = installLocation('rogue legacy');
-#print Dumper($install);
+#return 1: si clé créé
+#return 0: si clé modifiée car existante
+#return -1: si impossible de créer ou modifier
+sub createOrReplaceKey {
+	my ($root, $key) = _transformRegistryString(shift);
+	my $values = shift || {};
+	my $opened_key = _openKey($root, $key, KEY_WRITE_ALL);
+	if(!$opened_key) {
+		$opened_key = _openKey($root, "", KEY_WRITE_ALL);
+		if($opened_key) {
+			my $newKey = _createKey($opened_key, $key);
+			foreach (keys(%$values)) {
+				_setKeyValue($newKey, $values->{'name'}, $values->{'type'}, $values->{'data'});
+			}
+			Win32API::Registry::RegFlushKey($newKey);
+			_closeKey($newKey);
+		} else {
+			die "Impossible d'ouvrir la clé $root en écriture\n".Win32API::Registry::regLastError()."\n";
+		}
+		_closeKey($opened_key);
+		return 1;
+	} else {
+		#Il faut éumérer toutes les clés de $opened_key et les comparer aux nouvelles valeurs
+		#pour prossèder au changements (création de valeur, suppression ou mise à jour)
+		#Voir ci nécessaire
+		foreach (keys(%$values)) {
+			_setKeyValue($opened_key, $values->{'name'}, $values->{'type'}, $values->{'data'});
+		}
+		Win32API::Registry::RegFlushKey($newKey);
+		_closeKey($opened_key);
+		return 0;
+	}
+	return -1;
+}
 
-# my $res = scanRegistry("LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Applets");
-# my $res2 = scanRegistry("LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Authentication");
+sub deleteKey {
+	my ($root, $key) = _transformRegistryString(shift);
+	my $opened_key = _openKey($root, $key, KEY_WRITE_ALL);
+	if($opened_key) {
+		_closeKey($opened_key);
+		$opened_key = _openKey($root, "", KEY_WRITE_ALL);
+		if($opened_key) {
+			_deleteKey($opened_key, $key);
+		} else {
+			die "Impossible d'ouvrir $root en écriture\n".Win32API::Registry::regLastError()."\n";
+		}
+		_closeKey($opened_key);
+		return 1;
+	} else {
+		die "La clé $root\\$key n'existe pas\n".Win32API::Registry::regLastError()."\n";
+	}
+	return 0;
+}
 
-#my $hash = diffRegistry($res, $res2);
-#print Dumper($hash);
+##############################################################################
+##############################################################################
+#	Sauvegarde des clés de registre
+##############################################################################
+##############################################################################
 
-#$res = scanRegistry("LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/");
-#print scalar(@$res)."\n";
 
-#$res = scanRegistry("LMachine/SOFTWARE/Wow6432Node/Microsoft/Windows/CurrentVersion/Uninstall/");
-#print scalar(@$res)."\n";
 
-#print Dumper(_transformRegistryString(""));
-#print Dumper(_transformRegistryString("LMachine"));
-#print Dumper(_transformRegistryString("LMachine/SOFTWARE"));
-#print Dumper(_transformRegistryString("LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall"));
+
+
+##############################################################################
+##############################################################################
 1;
 __END__
