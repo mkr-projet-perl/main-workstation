@@ -267,7 +267,7 @@ sub _createKey {
 	my ($opened_key, $newSubKey) = @_;
 	my $newKey;
 	#Mettre les bons droits à la place de $uAccess
-	Win32API::Registry::RegCreateKeyEx($opened_key, $newSubKey, 0, "", [], $uAccess, [], $newKey, Win32API::Registry::REG_CREATED_NEW_KEY)
+	Win32API::Registry::RegCreateKeyEx($opened_key, $newSubKey, 0, "", [], KEY_WRITE_ALL, [], $newKey, Win32API::Registry::REG_CREATED_NEW_KEY)
 		or die "Impossible de créer une clé $newSubKey\n".Win32API::Registry::regLastError()."\n";
 	return $newKey;
 }
@@ -293,24 +293,35 @@ sub _deleteValues {
 	return 1;
 }
 
+sub _transformRegistryToCreatingKey {
+	return shift =~ m/(.+)\/(.*)/;
+}
+
 #return 1: si clé créé
 #return 0: si clé modifiée car existante
 #return -1: si impossible de créer ou modifier
 sub createOrReplaceKey {
-	my ($root, $key) = _transformRegistryString(shift);
+	my $path = shift;
 	my $values = shift || {};
-	my $opened_key = _openKey($root, $key, KEY_WRITE_ALL);
+	# $ctk_root chemin jusqu'au n-1 slash et $ctk_key le reste après le dernier slash
+	my ($ctk_root, $ctk_key) = _transformRegistryToCreatingKey($path);
+	# $s_root racine du chemin et $s_key le reste]
+	my ($s_root, $s_key) = _transformRegistryString($path);
+	print "$s_root\\$s_key\n";
+	my $opened_key = _openKey($s_root, $s_key, KEY_READ_ALL);
 	if(!$opened_key) {
-		$opened_key = _openKey($root, "", KEY_WRITE_ALL);
+		my ($n_ctk_root, $n_ctk_key) = _transformRegistryString($ctk_root);
+		print "$s_root\\$n_ctk_key\n";
+		my $opened_key = _openKey($s_root, $n_ctk_key, KEY_WRITE_ALL);
 		if($opened_key) {
-			my $newKey = _createKey($opened_key, $key);
+			my $newKey = _createKey($opened_key, $ctk_key);
 			foreach (keys(%$values)) {
 				_setKeyValue($newKey, $values->{'name'}, $values->{'type'}, $values->{'data'});
 			}
 			Win32API::Registry::RegFlushKey($newKey);
 			_closeKey($newKey);
 		} else {
-			die "Impossible d'ouvrir la clé $root en écriture\n".Win32API::Registry::regLastError()."\n";
+			die "Impossible d'ouvrir la clé $s_root en écriture\n".Win32API::Registry::regLastError()."\n";
 		}
 		_closeKey($opened_key);
 		return 1;
@@ -321,7 +332,7 @@ sub createOrReplaceKey {
 		foreach (keys(%$values)) {
 			_setKeyValue($opened_key, $values->{'name'}, $values->{'type'}, $values->{'data'});
 		}
-		Win32API::Registry::RegFlushKey($newKey);
+		Win32API::Registry::RegFlushKey($opened_key);
 		_closeKey($opened_key);
 		return 0;
 	}
