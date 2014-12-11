@@ -22,7 +22,9 @@ print scalar(keys(%res))."\n";
 # my $save = Registre::scanRegistry("LMachine/SOFTWARE/Wow6432Node/Microsoft/Windows/CurrentVersion/Uninstall/");
 # print "Nombre de clefs avant installation ".scalar(keys(%$save))."\n";
 
-# system($exe);
+# open(EXE, "$exe|");
+
+# close(EXE);
 
 # my $save2 = Registre::scanRegistry("LMachine/SOFTWARE/Wow6432Node/Microsoft/Windows/CurrentVersion/Uninstall/");
 # print "Nombre de clefs après installation ".scalar(keys(%$save2))."\n";
@@ -36,7 +38,7 @@ print scalar(keys(%res))."\n";
 # print "Informations d'installation\n";
 # print Dumper($installInformations);
 
-my $createdKey = Registre::createOrReplaceKey("LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/test1");
-print "Created result $createdKey\n";
+# my $createdKey = Registre::createOrReplaceKey("LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/test1");
+# print "Created result $createdKey\n";
 
 __END__
