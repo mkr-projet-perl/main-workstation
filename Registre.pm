@@ -381,7 +381,7 @@ sub makeConfig {
 	return 0;
 }
 
-#Cette fonction lit un fichier config et retourne le json décoder associé
+#Cette fonction lit un fichier config et retourne le json décodé associé
 sub readConfig {
 	my $configPath = shift;
 	
@@ -391,6 +391,20 @@ sub readConfig {
 		return from_json($doc, {utf8 => 1});
 	}
 	return 0;
+}
+
+sub loadConfig {
+	my $hash = shift;
+	my $cpt = 0;
+	foreach(my $i=0; 1; ++$i) {
+		my @level = grep { $_ =~ /\/{$i}/ } keys(%$hash);
+		foreach (@level) {
+			print "$_\n";
+			# createOrReplaceKey($_, $hash->{$_});
+		}
+		$cpt += @level;
+		last if($cpt == keys(%$hash));
+	}
 }
 
 
