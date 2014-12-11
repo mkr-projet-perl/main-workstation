@@ -3,6 +3,7 @@ package Registre;
 use strict;
 use Win32API::Registry 0.24;
 use Data::Dumper;
+use JSON;
 
 sub KEY_READ () { 131097 }
 sub KEY_WOW64_64KEY () { 131353 }
@@ -312,7 +313,7 @@ sub createOrReplaceKey {
 	if(!$opened_key) {
 		my ($n_ctk_root, $n_ctk_key) = _transformRegistryString($ctk_root);
 		print "$s_root\\$n_ctk_key\n";
-		my $opened_key = _openKey($s_root, $n_ctk_key, KEY_WRITE_ALL);
+		my $opened_key = _openKey($s_root, $n_ctk_key, KEY_READ_ALL);
 		if($opened_key) {
 			my $newKey = _createKey($opened_key, $ctk_key);
 			foreach (keys(%$values)) {
@@ -364,8 +365,47 @@ sub deleteKey {
 ##############################################################################
 ##############################################################################
 
+#Cette fonction prend en paramètre une table de hachage et le nom du fichier a créer.
+sub makeConfig {
+	my $hash = shift;
+	my $filename = shift;
+	my $json = to_json($hash, {pretty => 1, utf8 => 1});
+	
+	if(open(FILE, '>:encoding(UTF-8)', $filename)) {
+		print FILE $json;
+		close(FILE);
+		return 1;
+	} else {
+		print "erreur $!\n";
+	}
+	return 0;
+}
 
+#Cette fonction lit un fichier config et retourne le json décodé associé
+sub readConfig {
+	my $configPath = shift;
+	
+	if(open(FILE, '<:encoding(UTF-8)', $configPath)) {
+		my $doc;
+		$doc .= $_ while(<FILE>);
+		return from_json($doc, {utf8 => 1});
+	}
+	return 0;
+}
 
+sub loadConfig {
+	my $hash = shift;
+	my $cpt = 0;
+	foreach(my $i=0; 1; ++$i) {
+		my @level = grep { $_ =~ /\/{$i}/ } keys(%$hash);
+		foreach (@level) {
+			print "$_\n";
+			# createOrReplaceKey($_, $hash->{$_});
+		}
+		$cpt += @level;
+		last if($cpt == keys(%$hash));
+	}
+}
 
 
 ##############################################################################
