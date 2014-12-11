@@ -396,15 +396,20 @@ sub readConfig {
 sub loadConfig {
 	my $hash = shift;
 	my $cpt = 0;
-	foreach(my $i=0; 1; ++$i) {
-		my @level = grep { $_ =~ /\/{$i}/ } keys(%$hash);
-		foreach (@level) {
-			print "$_\n";
-			# createOrReplaceKey($_, $hash->{$_});
-		}
-		$cpt += @level;
-		last if($cpt == keys(%$hash));
+	foreach (keys(%$hash)) {
+		print "$_\n";
+		# createOrReplaceKey($_, $hash->{$_});
 	}
+	# foreach(my $i=0; 1; ++$i) {
+		# my @level = grep { $_ =~ /\/{$i}/ } keys(%$hash);
+		# print Dumper(@level);
+		# foreach (@level) {
+			# print "$_\n";
+			# # createOrReplaceKey($_, $hash->{$_});
+		# }
+		# $cpt += @level;
+		# last if($cpt == keys(%$hash));
+	# }
 }
 
 
