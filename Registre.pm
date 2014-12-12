@@ -172,49 +172,6 @@ sub _compareRegistryKey {
 	return $isSame;
 }
 
-sub _installInformation {
-	my ($registryPath, $appName, $values) = @_;
-	my %installLocation;
-	my ($root, $key) = _transformRegistryString($registryPath);
-	my $opened_key = _openKey($root, $key, KEY_READ_ALL);
-	my $nbSubKeys = _subKeyCounter($opened_key);
-	foreach (0..$nbSubKeys-1) {
-		my $subKeyName = _enumSubKeyName($opened_key, $_);
-		my $subOpenedKey = _openKey($opened_key, $subKeyName, KEY_READ_ALL);
-		my $name = _getRegistryKeyValue($subOpenedKey, "DisplayName");
-		$name =~ tr/A-Z/a-z/;
-		if($appName eq $name) {
-			if(defined $values) {
-				foreach (@$values) {
-					my ($type, $data) = _getRegistryKeyValue($subOpenedKey, $_);
-					if(defined $data && $data ne '') {
-						$installLocation{$_} = $data;
-					}
-				}
-			} else {
-				my ($type, $data) = _getRegistryKeyValue($subOpenedKey, "InstallLocation");
-				$installLocation{'InstallLocation'} = $data if(defined $data);
-			}
-		}
-		_closeKey($subOpenedKey);
-	}
-	_closeKey($opened_key);
-	return \%installLocation;
-}
-
-sub installLocation {
-	my $appName = shift;
-	$appName =~ tr/A-Z/a-z/;
-	my $registryKeyPath32Bits = 'LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/';
-	my $registryKeyPath64Bits = 'LMachine/SOFTWARE/Wow6432Node/Microsoft/Windows/CurrentVersion/Uninstall/';
-	my @values = qw(InstallLocation UninstallString DisplayIcon);
-	my $installLocation = _installInformation($registryKeyPath32Bits, $appName, \@values);
-	if(!defined $installLocation || $installLocation eq '') {
-		$installLocation = _installInformation($registryKeyPath64Bits, $appName, \@values);
-	}
-	return $installLocation;
-}
-
 sub scanRegistry {
 	my ($path) = @_;
 	my ($root, $key) = _transformRegistryString($path);
@@ -302,9 +259,8 @@ sub createOrReplaceKey {
 	my $path = shift;
 	my $values = shift || {};
 	my ($s_root, $s_key) = _transformRegistryString($path);
-	my $opened_key = _openKey($s_root, $s_key, KEY_WRITE_ALL);
 	my %_valueTypeReverse = reverse %$_valueType;
-	if($opened_key) {
+	if(my $opened_key = _openKey($s_root, $s_key, KEY_WRITE_ALL)) {
 		# print "Key existing -- insert values running...\n";
 		foreach (keys(%$values)) {
 			print "Create $_ with $values->{$_}->{'type'}, $values->{$_}->{'data'}\n";
@@ -315,7 +271,7 @@ sub createOrReplaceKey {
 		return 0;
 	} else {
 		# print "Key not existing -- create key running...\n";
-		$opened_key = _openKey($s_root, "", KEY_WRITE_ALL);
+		my $opened_key = _openKey($s_root, "", KEY_WRITE_ALL);
 		my $newKey = _createKey($s_root, $s_key);
 		foreach (keys(%$values)) {
 			print "Create $_ with $values->{$_}->{'type'}, $values->{$_}->{'data'}\n";
@@ -330,22 +286,28 @@ sub createOrReplaceKey {
 
 sub deleteKey {
 	my $path = shift;
-	if($path =~ m/(.+?)\/(.+)\/(.*)/) {
-		if(defined $1 && defined $2 && defined $3) {
-			my $root = $_rootRegistryKey->{$1};
-			my $sKey = $2;
-			my $dKey = $3;
-			$sKey =~ s/\//\\\\/g;
-			if(my $opened_key = _openKey($root, $sKey, KEY_WRITE_ALL)) {
-				# _deleteKey($opened_key, $deletedKey);
-				_closeKey($opened_key);
-				return 1;
+	my ($root, $key) = _transformRegistryString($path);
+	if(my $opened_key = _openKey($root, $key, KEY_WRITE_ALL)) {
+		if(my $nbSubKey = _subKeyCounter($opened_key)) {
+			foreach (0..$nbSubKey-1) {
+				my $subName = _enumSubKeyName($opened_key, $_);
+				deleteKey("$path\\\\$subName");
 			}
-			return 0;			
+		} else {
+			if($path =~ m/(.+?)\/(.+)\/(.*)/) {
+				my $root = $_rootRegistryKey->{$1};
+				my $sKey = $2;
+				my $dKey = $3;
+				$sKey =~ s/\//\\\\/g;
+				if(my $sub_opened_key = _openKey($root, $sKey, KEY_WRITE_ALL)) {
+					print "$path\n";
+					# _deleteKey($sub_opened_key, $dKey);
+					_closeKey($sub_opened_key);
+				}
+			}
 		}
-		return 0;
+		_closeKey($opened_key);
 	}
-	return 0;
 }
 
 ##############################################################################
