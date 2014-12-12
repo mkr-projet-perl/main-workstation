@@ -6,7 +6,7 @@ use Registre;
 my $time = time;
 my $test = 
 {
-	'key1' => 
+	'LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/key1' => 
 	{
 		'valueName1' => 
 			{
@@ -19,7 +19,7 @@ my $test =
 				'data' => 'data content2'
 			}
 	},
-	'key1/sKey1' =>
+	'LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/key1/sKey1' =>
 	{
 		'valueName3' =>
 			{
@@ -32,7 +32,7 @@ my $test =
 				'data' => 'data content4'
 			},
 	},
-	'key1/sKey2' =>
+	'LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/key1/sKey2' =>
 	{
 		'valueName5' =>
 			{
@@ -45,7 +45,7 @@ my $test =
 				'data' => 'data content6'
 			},
 	},
-	'key1/sKey2/ssKey1' =>
+	'LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/key1/sKey2/ssKey1' =>
 	{
 		'valueName7' =>
 			{
@@ -58,7 +58,7 @@ my $test =
 				'data' => 'data content8'
 			},
 	},
-	'key2/sKey54564/ssKey486464a446' =>
+	'LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/key2/sKey54564/ssKey486464a446' =>
 	{
 		'valueName9' =>
 			{

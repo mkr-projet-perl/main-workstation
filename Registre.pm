@@ -2,14 +2,13 @@
 package Registre;
 use strict;
 use Win32API::Registry 0.24;
+use Win32::TieRegistry;
 use Data::Dumper;
 use JSON;
 
-sub KEY_READ () { 131097 }
-sub KEY_WOW64_64KEY () { 131353 }
-sub KEY_WOW64_64KEY_W () { 131334 }
-sub KEY_READ_ALL () { Win32API::Registry::KEY_READ|KEY_WOW64_64KEY}
-sub KEY_WRITE_ALL () { Win32API::Registry::KEY_WRITE|KEY_WOW64_64KEY_W }
+sub KEY_WOW64_64KEY () { 0x0100 }
+sub KEY_READ_ALL () { Win32API::Registry::KEY_READ|KEY_WOW64_64KEY }
+sub KEY_WRITE_ALL () { Win32API::Registry::KEY_WRITE|KEY_WOW64_64KEY }
 
 sub _openKey {
 	my ($root, $key, $key_rights) = @_;
@@ -37,36 +36,35 @@ my $_rootRegistryKey = {
 };
 
 my $_valueType = {
+	0	=> 'REG_NONE',
 	1	=> 'REG_SZ',
 	2	=> 'REG_EXPAND_SZ',
 	3	=> 'REG_BINARY',
 	4	=> 'REG_DWORD',
+	6	=> 'REG_LINK',
 	7	=> 'REG_MULTI_SZ',
 	9	=> 'REG_FULL_RESOURCE_DESCRIPTOR'
 };
 
 sub _transformRegistryString {
 	my $str = shift;
-	my ($root, $key);
-	if($str =~ m/^(\w+)(\/(.+)$)?/) {
-		if(defined $1) {
-			$root = $1;
-			if(exists $_rootRegistryKey->{$root}) {
-				$root = $_rootRegistryKey->{$root};
-				if(defined $3) {
-					$key = $3;
-					$key =~ s/\//\\\\/g;
-				} else {
-					$key = "";
-				}
-			} else {
-				$root = undef;
-			}
-		} else {
-			print "$str n'est pas une clé\n";
+	if($str =~ /(.+?)\/(.*)/) {
+		if(defined $1 && defined $2) {
+			my ($root, $sKey);
+			$root = $_rootRegistryKey->{$1};
+			$sKey = $2 if(defined $2);
+			$sKey =~ s/\//\\\\/g;
+			return ($root, $sKey);
 		}
+		return 0;
+	}elsif($str =~ /(.+)(\/)?/) {
+		if(defined $1) {
+			my $root = $_rootRegistryKey->{$1} if(defined $1);
+			return $root;
+		}
+		return 0;
 	}
-	return ($root, $key);
+	return 0;
 }
 
 sub _transformRegistryValue {
@@ -267,8 +265,7 @@ sub diffRegistry {
 sub _createKey {
 	my ($opened_key, $newSubKey) = @_;
 	my $newKey;
-	#Mettre les bons droits à la place de $uAccess
-	Win32API::Registry::RegCreateKeyEx($opened_key, $newSubKey, 0, "", [], KEY_WRITE_ALL, [], $newKey, Win32API::Registry::REG_CREATED_NEW_KEY)
+	Win32API::Registry::RegCreateKeyEx($opened_key, $newSubKey, 0, "", Win32API::Registry::REG_OPTION_NON_VOLATILE, Win32API::Registry::KEY_WRITE|KEY_WOW64_64KEY, [], $newKey, [])
 		or die "Impossible de créer une clé $newSubKey\n".Win32API::Registry::regLastError()."\n";
 	return $newKey;
 }
@@ -304,44 +301,36 @@ sub _transformRegistryToCreatingKey {
 sub createOrReplaceKey {
 	my $path = shift;
 	my $values = shift || {};
-	# $ctk_root chemin jusqu'au n-1 slash et $ctk_key le reste après le dernier slash
-	my ($ctk_root, $ctk_key) = _transformRegistryToCreatingKey($path);
-	# $s_root racine du chemin et $s_key le reste]
 	my ($s_root, $s_key) = _transformRegistryString($path);
-	print "$s_root\\$s_key\n";
-	my $opened_key = _openKey($s_root, $s_key, KEY_READ_ALL);
-	if(!$opened_key) {
-		my ($n_ctk_root, $n_ctk_key) = _transformRegistryString($ctk_root);
-		print "$s_root\\$n_ctk_key\n";
-		my $opened_key = _openKey($s_root, $n_ctk_key, KEY_READ_ALL);
-		if($opened_key) {
-			my $newKey = _createKey($opened_key, $ctk_key);
-			foreach (keys(%$values)) {
-				_setKeyValue($newKey, $values->{'name'}, $values->{'type'}, $values->{'data'});
-			}
-			Win32API::Registry::RegFlushKey($newKey);
-			_closeKey($newKey);
-		} else {
-			die "Impossible d'ouvrir la clé $s_root en écriture\n".Win32API::Registry::regLastError()."\n";
-		}
-		_closeKey($opened_key);
-		return 1;
-	} else {
-		#Il faut éumérer toutes les clés de $opened_key et les comparer aux nouvelles valeurs
-		#pour prossèder au changements (création de valeur, suppression ou mise à jour)
-		#Voir ci nécessaire
+	my $opened_key = _openKey($s_root, $s_key, KEY_WRITE_ALL);
+	my %_valueTypeReverse = reverse %$_valueType;
+	if($opened_key) {
+		# print "Key existing -- insert values running...\n";
 		foreach (keys(%$values)) {
-			_setKeyValue($opened_key, $values->{'name'}, $values->{'type'}, $values->{'data'});
+			print "Create $_ with $values->{$_}->{'type'}, $values->{$_}->{'data'}\n";
+			my $type = $_valueTypeReverse{$values->{$_}->{'type'}};
+			_setKeyValue($opened_key, $_, $type, $values->{$_}->{'data'});
 		}
-		Win32API::Registry::RegFlushKey($opened_key);
 		_closeKey($opened_key);
 		return 0;
+	} else {
+		# print "Key not existing -- create key running...\n";
+		$opened_key = _openKey($s_root, "", KEY_WRITE_ALL);
+		my $newKey = _createKey($s_root, $s_key);
+		foreach (keys(%$values)) {
+			print "Create $_ with $values->{$_}->{'type'}, $values->{$_}->{'data'}\n";
+			my $type = $_valueTypeReverse{$values->{$_}->{'type'}};
+			_setKeyValue($opened_key, $_, $type, $values->{$_}->{'data'});
+		}
+		_closeKey($newKey);
+		_closeKey($opened_key);
+		return 1;
 	}
-	return -1;
 }
 
 sub deleteKey {
-	my ($root, $key) = _transformRegistryString(shift);
+	my $path = shift;
+	my ($root, $key) = _transformRegistryString($path);
 	my $opened_key = _openKey($root, $key, KEY_WRITE_ALL);
 	if($opened_key) {
 		_closeKey($opened_key);
@@ -361,7 +350,9 @@ sub deleteKey {
 
 ##############################################################################
 ##############################################################################
-#	Sauvegarde des clés de registre
+#	Gestion du fichier de config
+# Ce fichier sert à la création de clé de registre sur le poste client.
+# Il est envoyé par la machine maître au client.
 ##############################################################################
 ##############################################################################
 
@@ -398,7 +389,7 @@ sub loadConfig {
 	my $cpt = 0;
 	foreach (keys(%$hash)) {
 		print "$_\n";
-		# createOrReplaceKey($_, $hash->{$_});
+		createOrReplaceKey($_, $hash->{$_});
 	}
 	# foreach(my $i=0; 1; ++$i) {
 		# my @level = grep { $_ =~ /\/{$i}/ } keys(%$hash);
@@ -415,5 +406,6 @@ sub loadConfig {
 
 ##############################################################################
 ##############################################################################
+
 1;
 __END__
