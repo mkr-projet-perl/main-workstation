@@ -386,32 +386,28 @@ sub readConfig {
 
 sub loadCreateConfig {
 	my $hash = shift;
+	my $sizeMax = 0;
+	my $sizeMin = ((keys(%$hash))[0] =~ tr/\//\//);
 	foreach (keys(%$hash)) {
-		# print "$_\n";
-		createOrReplaceKey($_, $hash->{$_});
+		my $tmpSize = ($_ =~ tr/\//\// );
+		$sizeMax = $tmpSize if($tmpSize >= $sizeMax);
+		$sizeMin = $tmpSize if($tmpSize <= $sizeMin);
+	}
+	# print "MAX\t$sizeMax\nMIN\t$sizeMin\n";
+	while($sizeMax >= $sizeMin) {
+		my @sTab = grep { ($_ =~ tr/\//\//) == $sizeMax } keys(%$hash);
+		foreach (@sTab) {
+			# print "$_\n";
+			createOrReplaceKey($_, $hash->{$_});
+		}
+		--$sizeMax;
 	}
 }
 
 sub loadDeleteConfig {
 	my $tab = shift;
-	my $sizeMax = 0;
 	foreach (@$tab) {
-		my $tmpSize = ($_ =~ tr/\//\// );
-		$sizeMax = $tmpSize if( $tmpSize >= $sizeMax);
-	}
-	my $sizeMin = $sizeMax;
-	foreach (@$tab) {
-		my $tmpSize = ($_ =~ tr/\//\// );
-		$sizeMin = $tmpSize if( $tmpSize < $sizeMax);
-	}
-	print "MAX\t$sizeMax\nMIN\t$sizeMin\n";
-	while($sizeMax > $sizeMin) {
-		my @sTab = grep { ($_ =~ tr/\//\//) >= $sizeMax } @$tab;
-		foreach (@sTab) {
-			print "$_\n";
-			deleteKey($_);
-		}
-		--$sizeMax;
+		deleteKey($_);
 	}
 }
 

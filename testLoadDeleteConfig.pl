@@ -71,14 +71,11 @@ my $test =
 			},
 	},
 };
-Registre::loadCreateConfig($test);
+# Registre::loadCreateConfig($test);
 
 $test = 
 [
-	'LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/key1/sKey2/ssKey1',
-	'LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/key1/sKey2',
 	'LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/key1',
-	'LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/key1/sKey1',
 	'LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/key2/sKey54564/ssKey486464a446'
 ];
 
