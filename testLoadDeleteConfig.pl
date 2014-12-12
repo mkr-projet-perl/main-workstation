@@ -3,7 +3,6 @@ use strict;
 use Data::Dumper;
 use Registre;
 
-my $time = time;
 my $test = 
 {
 	'LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/key1' => 
@@ -72,8 +71,20 @@ my $test =
 			},
 	},
 };
-print "Load config...\n";
 Registre::loadCreateConfig($test);
+
+$test = 
+[
+	'LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/key1/sKey2/ssKey1',
+	'LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/key1/sKey2',
+	'LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/key1',
+	'LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/key1/sKey1',
+	'LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/key2/sKey54564/ssKey486464a446'
+];
+
+my $time = time;
+print "Load config...\n";
+Registre::loadDeleteConfig($test);
 $time = time - $time;
 print "Config loaded\n";
 print "Running time $time secondes\n";

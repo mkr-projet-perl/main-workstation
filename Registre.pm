@@ -330,20 +330,20 @@ sub createOrReplaceKey {
 
 sub deleteKey {
 	my $path = shift;
-	my ($root, $key) = _transformRegistryString($path);
-	my $opened_key = _openKey($root, $key, KEY_WRITE_ALL);
-	if($opened_key) {
-		_closeKey($opened_key);
-		$opened_key = _openKey($root, "", KEY_WRITE_ALL);
-		if($opened_key) {
-			_deleteKey($opened_key, $key);
-		} else {
-			die "Impossible d'ouvrir $root en écriture\n".Win32API::Registry::regLastError()."\n";
+	if($path =~ m/(.+?)\/(.+)\/(.*)/) {
+		if(defined $1 && defined $2 && defined $3) {
+			my $root = $_rootRegistryKey->{$1};
+			my $sKey = $2;
+			my $dKey = $3;
+			$sKey =~ s/\//\\\\/g;
+			if(my $opened_key = _openKey($root, $sKey, KEY_WRITE_ALL)) {
+				# _deleteKey($opened_key, $deletedKey);
+				_closeKey($opened_key);
+				return 1;
+			}
+			return 0;			
 		}
-		_closeKey($opened_key);
-		return 1;
-	} else {
-		die "La clé $root\\$key n'existe pas\n".Win32API::Registry::regLastError()."\n";
+		return 0;
 	}
 	return 0;
 }
@@ -358,9 +358,9 @@ sub deleteKey {
 
 #Cette fonction prend en paramètre une table de hachage et le nom du fichier a créer.
 sub makeConfig {
-	my $hash = shift;
+	my $ref = shift;
 	my $filename = shift;
-	my $json = to_json($hash, {pretty => 1, utf8 => 1});
+	my $json = to_json($ref, {pretty => 1, utf8 => 1});
 	
 	if(open(FILE, '>:encoding(UTF-8)', $filename)) {
 		print FILE $json;
@@ -384,23 +384,35 @@ sub readConfig {
 	return 0;
 }
 
-sub loadConfig {
+sub loadCreateConfig {
 	my $hash = shift;
-	my $cpt = 0;
 	foreach (keys(%$hash)) {
-		print "$_\n";
+		# print "$_\n";
 		createOrReplaceKey($_, $hash->{$_});
 	}
-	# foreach(my $i=0; 1; ++$i) {
-		# my @level = grep { $_ =~ /\/{$i}/ } keys(%$hash);
-		# print Dumper(@level);
-		# foreach (@level) {
-			# print "$_\n";
-			# # createOrReplaceKey($_, $hash->{$_});
-		# }
-		# $cpt += @level;
-		# last if($cpt == keys(%$hash));
-	# }
+}
+
+sub loadDeleteConfig {
+	my $tab = shift;
+	my $sizeMax = 0;
+	foreach (@$tab) {
+		my $tmpSize = ($_ =~ tr/\//\// );
+		$sizeMax = $tmpSize if( $tmpSize >= $sizeMax);
+	}
+	my $sizeMin = $sizeMax;
+	foreach (@$tab) {
+		my $tmpSize = ($_ =~ tr/\//\// );
+		$sizeMin = $tmpSize if( $tmpSize < $sizeMax);
+	}
+	print "MAX\t$sizeMax\nMIN\t$sizeMin\n";
+	while($sizeMax > $sizeMin) {
+		my @sTab = grep { ($_ =~ tr/\//\//) >= $sizeMax } @$tab;
+		foreach (@sTab) {
+			print "$_\n";
+			deleteKey($_);
+		}
+		--$sizeMax;
+	}
 }
 
 
