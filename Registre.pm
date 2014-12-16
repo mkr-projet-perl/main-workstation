@@ -105,8 +105,7 @@ sub _enumSubKeyName {
 sub _enumValue {
 	my ($opened_key, $index) = @_;
 	my ($name, $type, $data);
-	Win32API::Registry::RegEnumValue($opened_key, $index, $name, [], [], $type, $data, 0)
-		or die "RegEnumValue impossible de récupérer le nom, le type et le contenue de la valeur\n".Win32API::Registry::regLastError()."\n";
+	Win32API::Registry::RegEnumValue($opened_key, $index, $name, [], [], $type, $data, 0);
 	return ($name, $type, $data);
 }
 
@@ -139,8 +138,7 @@ sub _scanRegistry {
 		$nbSubKeys = _subKeyCounter($opened_key);
 		if($nbSubKeys) {
 			foreach (0..$nbSubKeys-1) {
-				my $subKeyName = _enumSubKeyName($opened_key, $_);
-				if($subKeyName) {
+				if(my $subKeyName = _enumSubKeyName($opened_key, $_)) {
 					_scanRegistry($opened_key, $subKeyName, $res, $fullPath."/".$subKeyName);
 				}
 			}
@@ -178,7 +176,7 @@ sub scanRegistry {
 	my %res;
 	print "$root\t$key\n";
 	if(defined $root) {
-		_scanRegistry($root, $key, \%res, $key);
+		_scanRegistry($root, $key, \%res, $path);
 	} else {
 		print "$path n'est pas une clé valide\n";
 	}
@@ -194,11 +192,8 @@ sub diffRegistry {
 			$deleted{$_} = $oldRegistry->{$_};
 		} else {
 			#On regarde si elle a été modifiée (valeur, type, contenue)
-			my $values = $oldRegistry->{$_};
-			foreach (keys(%$values)) {
-				if(!_compareRegistryKey($values, $newRegistry->{$_})) {
-					$updatings{$_} = $oldRegistry->{$_};
-				}
+			if(!_compareRegistryKey($oldRegistry->{$_}, $newRegistry->{$_})) {
+				$updatings{$_} = $oldRegistry->{$_};
 			}
 		}
 	}

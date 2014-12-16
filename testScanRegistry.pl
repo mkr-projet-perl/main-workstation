@@ -1,44 +1,46 @@
-#!C:\Dwimperl\perl\bin\perl -w
+#!C:\Dwimperl\perl\bin\perl
 use strict;
 use Data::Dumper;
 use Registre;
 
-my $program = $ARGV[0] || "C:\\Users\\romain\\Downloads\\npp.6.6.9.Installer.exe";
-my $scanningPart = "LMachine/SOFTWARE/Wow6432Node/Microsoft/Windows/CurrentVersion/Uninstall";
-
-print "Scan of registry before installation...\n";
+print "Test 1\n";
 print "----------------------------------------\n";
 
 my $time = time;
-my $scanBeforeInstallation = Registre::scanRegistry($scanningPart);
+my $scan = Registre::scanRegistry("LMachine/SOFTWARE/Wow6432Node/Microsoft/Windows/CurrentVersion/Uninstall");
 $time = time - $time;
+print "Nb keys scanned ".scalar(keys(%$scan))."\n";
 print "Running time $time secondes\n";
-print "###\n\n";
+print "\n\n";
 
-$time = time;
-print $program." installation...\n";
-print "----------------------------------------\n";
-system $program;
-$time = time - $time;
-print "Running time $time secondes\n";
-print "###\n\n";
-
-print "Scan of registry after installation...\n";
+print "Test 2\n";
 print "----------------------------------------\n";
 
 $time = time;
-my $scanAfterInstallation = Registre::scanRegistry($scanningPart);
+$scan = Registre::scanRegistry("LMachine/SOFTWARE/Wow6432Node/Microsoft/Windows/CurrentVersion");
 $time = time - $time;
+print "Nb keys scanned ".scalar(keys(%$scan))."\n";
 print "Running time $time secondes\n";
-print "###\n\n";
+print "\n\n";
 
-print "Research registry changes...\n";
+print "Test 3\n";
 print "----------------------------------------\n";
+
 $time = time;
-my $diff = Registre::diffRegistry($scanBeforeInstallation, $scanAfterInstallation);
+$scan = Registre::scanRegistry("CUser");
 $time = time - $time;
-print(Dumper($diff));
+print "Nb keys scanned ".scalar(keys(%$scan))."\n";
 print "Running time $time secondes\n";
-print "###\n\n";
+print "\n\n";
+
+print "Test 4\n";
+print "----------------------------------------\n";
+
+$time = time;
+$scan = Registre::scanRegistry();
+$time = time - $time;
+print "Nb keys scanned ".scalar(keys(%$scan))."\n";
+print "Running time $time secondes\n";
+print "\n\n";
 
 __END__
