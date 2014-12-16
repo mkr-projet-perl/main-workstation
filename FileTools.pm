@@ -6,15 +6,17 @@ sub _giveFiles {
 	my $dir = shift;
 	my $hash = shift;
 	my @list;
+	$dir =~ s/\//\\\\/g;
+	print "$dir\n";
 	if(-d $dir) {
 			if(opendir(CRT_DIR, $dir)) {
 				my @files = grep {!/^\.\.?$/} readdir CRT_DIR;
 				close(CRT_DIR); 
 				foreach (@files) {
-					my $path = $dir.'\\'.$_;
+					my $path = $dir.'\\\\'.$_;
 					chomp $path;
 					if (-d $path){
-						if($path !~ /^C:\\\\.*?\..*|^C:\\\\.*?\$.*/ && $path ne "C:\\\\Windows" && $path ne "C:\\\\Recovery") {
+						if($path !~ /^C:\/.*?\..*|^C:\/.*?\$.*/ && $path ne "C:/Windows" && $path ne "C:/Recovery") {
 							_giveFiles($path, $hash);
 						}
 					} elsif(-f $path) {
