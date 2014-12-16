@@ -157,11 +157,11 @@ sub _compareRegistryKey {
 	my $isSame = 1;
 	foreach (keys(%$valuesA)) {
 		if(exists $valuesB->{$_}) {
-			if(!$valuesA->{$_}{'type'} eq $valuesB->{$_}{'type'}) {
+			if($valuesA->{$_}->{'type'} ne $valuesB->{$_}->{'type'}) {
 				$isSame = 0;
 			}
-			if(!$valuesA->{$_}{'data'} == $valuesB->{$_}{'data'} ||
-				!$valuesA->{$_}{'data'} eq $valuesB->{$_}{'data'}) {
+			if($valuesA->{$_}->{'data'} != $valuesB->{$_}->{'data'} ||
+				$valuesA->{$_}->{'data'} ne $valuesB->{$_}->{'data'}) {
 				$isSame = 0;		
 			}
 		} else {
@@ -173,7 +173,7 @@ sub _compareRegistryKey {
 }
 
 sub scanRegistry {
-	my ($path) = @_;
+	my $path = shift || "LMachine";
 	my ($root, $key) = _transformRegistryString($path);
 	my %res;
 	print "$root\t$key\n";
@@ -196,7 +196,7 @@ sub diffRegistry {
 			#On regarde si elle a été modifiée (valeur, type, contenue)
 			my $values = $oldRegistry->{$_};
 			foreach (keys(%$values)) {
-				if(!_compareRegistryKey($oldRegistry->{$_}, $newRegistry->{$_})) {
+				if(!_compareRegistryKey($values, $newRegistry->{$_})) {
 					$updatings{$_} = $oldRegistry->{$_};
 				}
 			}
