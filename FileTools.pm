@@ -2,22 +2,33 @@
 package FileTools;
 use strict;
 
+sub _containsInForbidden {
+	my $dir = shift;
+	my $forbiddenDir = shift;
+	my $isIn = 0;
+	$isIn = 1 if(grep{ $_ eq $dir } @$forbiddenDir);
+	return $isIn;
+}
+
 sub _giveFiles {
 	my $dir = shift;
 	my $hash = shift;
+	my $forbiddenDir = shift;
 	my @list;
-	$dir =~ s/\//\\\\/g;
 	print "$dir\n";
 	if(-d $dir) {
 			if(opendir(CRT_DIR, $dir)) {
 				my @files = grep {!/^\.\.?$/} readdir CRT_DIR;
 				close(CRT_DIR); 
 				foreach (@files) {
-					my $path = $dir.'\\\\'.$_;
+					$dir =~ s/\/+$//g;
+					my $path = $dir.'/'.$_;
 					chomp $path;
 					if (-d $path){
-						if($path !~ /^C:\/.*?\..*|^C:\/.*?\$.*/ && $path ne "C:/Windows" && $path ne "C:/Recovery") {
-							_giveFiles($path, $hash);
+						if($path !~ /^C:\/.*?\..*|^C:\/.*?\$.*/) {
+							if(!defined $forbiddenDir || !_containsInForbidden($path, $forbiddenDir)) {
+								_giveFiles($path, $hash);
+							}
 						}
 					} elsif(-f $path) {
 						push @list, $path;
@@ -34,13 +45,14 @@ sub _giveFiles {
 
 sub giveFilesInDirectory {
 	my $dir = shift;
+	my $forbiddenDir = shift;
 	my $hash = {};
 	if(ref($dir) eq "ARRAY") {
 		foreach my $crt_path (@$dir) {
-			_giveFiles($crt_path, $hash);
+			_giveFiles($crt_path, $hash, $forbiddenDir);
 		}
 	} else {
-		_giveFiles($dir, $hash);
+		_giveFiles($dir, $hash, $forbiddenDir);
 	}
 	return $hash;
 }
