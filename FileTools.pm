@@ -98,5 +98,13 @@ sub diff {
 	return \%hash;
 }
 
+sub makeCreateConfig {
+	
+}
+
+sub makeDeleteConfig {
+	
+}
+
 1;
 __END__
