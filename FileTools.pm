@@ -1,6 +1,7 @@
 #!C:\Dwimperl\perl\bin\perl -w
 package FileTools;
 use strict;
+use JSON;
 
 sub _containsInForbidden {
 	my $dir = shift;
@@ -98,14 +99,34 @@ sub diff {
 	return \%hash;
 }
 
+sub _createConfigFile {
+	my $filename = shift;
+	my $content = shift;
+	
+	if(open(FILE, '>:encoding(UTF-8)', $filename)) {
+		print FILE $content;
+		close(FILE);
+		return 1;
+	} else {
+		print "erreur $!\n";
+	}
+	return 0;
+}
+
 sub makeCreateConfig {
 	my $ref = shift;
 	my $filename = shift;
+	
+	my $json = to_json($ref, {pretty => 1, utf8 => 1});
+	return _createConfigFile($filename, $json);
 }
 
 sub makeDeleteConfig {
 	my $ref = shift;
 	my $filename = shift;
+	
+	my $json = to_json($ref, {pretty => 1, utf8 => 1});
+	return _createConfigFile($filename, $json);
 }
 
 1;
