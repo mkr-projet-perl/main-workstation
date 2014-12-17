@@ -255,6 +255,8 @@ sub createOrReplaceKey {
 	my $values = shift || {};
 	my ($s_root, $s_key) = _transformRegistryString($path);
 	my %_valueTypeReverse = reverse %$_valueType;
+	print "$path\n";
+	print "------------\n";
 	if(my $opened_key = _openKey($s_root, $s_key, KEY_WRITE_ALL)) {
 		# print "Key existing -- insert values running...\n";
 		foreach (keys(%$values)) {
@@ -271,7 +273,7 @@ sub createOrReplaceKey {
 		foreach (keys(%$values)) {
 			print "Create $_ with $values->{$_}->{'type'}, $values->{$_}->{'data'}\n";
 			my $type = $_valueTypeReverse{$values->{$_}->{'type'}};
-			_setKeyValue($opened_key, $_, $type, $values->{$_}->{'data'});
+			_setKeyValue($newKey, $_, $type, $values->{$_}->{'data'});
 		}
 		_closeKey($newKey);
 		_closeKey($opened_key);
@@ -282,12 +284,18 @@ sub createOrReplaceKey {
 sub deleteKey {
 	my $path = shift;
 	my ($root, $key) = _transformRegistryString($path);
+	print "$path\n";
+	print "------------\n";
 	if(my $opened_key = _openKey($root, $key, KEY_WRITE_ALL)) {
 		if(my $nbSubKey = _subKeyCounter($opened_key)) {
+			print "nb key $nbSubKey\n";
+			print "Valeur\n----------\n";
 			foreach (0..$nbSubKey-1) {
 				my $subName = _enumSubKeyName($opened_key, $_);
+				print "key\t$subName\n";
 				deleteKey("$path\\\\$subName");
 			}
+			print "------------------\n";
 		} else {
 			if($path =~ m/(.+?)\/(.+)\/(.*)/) {
 				my $root = $_rootRegistryKey->{$1};
@@ -295,14 +303,14 @@ sub deleteKey {
 				my $dKey = $3;
 				$sKey =~ s/\//\\\\/g;
 				if(my $sub_opened_key = _openKey($root, $sKey, KEY_WRITE_ALL)) {
-					print "$path\n";
-					# _deleteKey($sub_opened_key, $dKey);
+					_deleteKey($sub_opened_key, $dKey);
 					_closeKey($sub_opened_key);
 				}
 			}
 		}
 		_closeKey($opened_key);
 	}
+	print "------------\n";
 }
 
 ##############################################################################

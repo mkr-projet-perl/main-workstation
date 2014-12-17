@@ -25,7 +25,7 @@ sub _giveFiles {
 					my $path = $dir.'/'.$_;
 					chomp $path;
 					if (-d $path){
-						if($path !~ /^C:\/.*?\..*|^C:\/.*?\$.*/) {
+						if($path !~ /^C:\/.*?\..*|^C:\/.*?\$.*|^C:\/Users\/.*?\/AppData\/Local|^C:\/Users\/.*?\/AppData\/LocalLow/) {
 							if(!defined $forbiddenDir || !_containsInForbidden($path, $forbiddenDir)) {
 								_giveFiles($path, $hash);
 							}
