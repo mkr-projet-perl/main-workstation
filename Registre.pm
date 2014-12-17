@@ -171,7 +171,7 @@ sub _compareRegistryKey {
 }
 
 sub scanRegistry {
-	my $path = shift || "LMachine";
+	my $path = shift || "LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion";
 	my ($root, $key) = _transformRegistryString($path);
 	my %res;
 	print "$root\t$key\n";
