@@ -73,17 +73,17 @@ my $test =
 };
 Registre::loadCreateConfig($test);
 
-# $test = 
-# [
-	# 'LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/key1',
-	# 'LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/key2/sKey54564/ssKey486464a446'
-# ];
+$test = 
+[
+	'LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/key1',
+	'LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/key2/sKey54564/ssKey486464a446'
+];
 
-# my $time = time;
-# print "Load config...\n";
-# Registre::loadDeleteConfig($test);
-# $time = time - $time;
-# print "Config loaded\n";
-# print "Running time $time secondes\n";
+my $time = time;
+print "Load config...\n";
+Registre::loadDeleteConfig($test);
+$time = time - $time;
+print "Config loaded\n";
+print "Running time $time secondes\n";
 
 __END__

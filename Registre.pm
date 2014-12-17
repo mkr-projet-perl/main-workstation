@@ -217,7 +217,7 @@ sub diffRegistry {
 sub _createKey {
 	my ($opened_key, $newSubKey) = @_;
 	my $newKey;
-	Win32API::Registry::RegCreateKeyEx($opened_key, $newSubKey, 0, "", Win32API::Registry::REG_OPTION_NON_VOLATILE, Win32API::Registry::KEY_WRITE|KEY_WOW64_64KEY, [], $newKey, [])
+	Win32API::Registry::RegCreateKeyEx($opened_key, $newSubKey, 0, "", Win32API::Registry::REG_OPTION_NON_VOLATILE, Win32API::Registry::KEY_ALL_ACCESS, [], $newKey, [])
 		or die "Impossible de créer une clé $newSubKey\n".Win32API::Registry::regLastError()."\n";
 	return $newKey;
 }
@@ -283,34 +283,36 @@ sub createOrReplaceKey {
 
 sub deleteKey {
 	my $path = shift;
+	my $deleteKey = shift;
+	$path =~ s/\/+$//;
 	my ($root, $key) = _transformRegistryString($path);
-	print "$path\n";
-	print "------------\n";
-	if(my $opened_key = _openKey($root, $key, KEY_WRITE_ALL)) {
+	if(my $opened_key = _openKey($root, $key, Win32API::Registry::KEY_ALL_ACCESS|KEY_WOW64_64KEY)) {
 		if(my $nbSubKey = _subKeyCounter($opened_key)) {
-			print "nb key $nbSubKey\n";
-			print "Valeur\n----------\n";
 			foreach (0..$nbSubKey-1) {
 				my $subName = _enumSubKeyName($opened_key, $_);
-				print "key\t$subName\n";
-				deleteKey("$path\\\\$subName");
-			}
-			print "------------------\n";
-		} else {
-			if($path =~ m/(.+?)\/(.+)\/(.*)/) {
-				my $root = $_rootRegistryKey->{$1};
-				my $sKey = $2;
-				my $dKey = $3;
-				$sKey =~ s/\//\\\\/g;
-				if(my $sub_opened_key = _openKey($root, $sKey, KEY_WRITE_ALL)) {
-					_deleteKey($sub_opened_key, $dKey);
-					_closeKey($sub_opened_key);
-				}
+				deleteKey("$path/$subName", $deleteKey);
 			}
 		}
+		# else {
+			# if($path =~ m/(.+?)\/(.+)\/(.*)/) {
+				# my $root = $_rootRegistryKey->{$1};
+				# my $sKey = $2;
+				# my $dKey = $3;
+				# $sKey =~ s/\//\\\\/g;
+				# if(my $sub_opened_key = _openKey($root, $sKey, Win32API::Registry::KEY_ALL_ACCESS|KEY_WOW64_64KEY)) {
+					# # print "Root $root\n";
+					# # print "sKey $sKey\n";
+					# # print "dKey $dKey\n";
+					# # print "path $path\n";
+					# # _deleteKey($sub_opened_key, $dKey);
+					# # push @$deleteKey, $path;
+					# _closeKey($sub_opened_key);
+				# }
+			# }
+		# }
 		_closeKey($opened_key);
+		push @$deleteKey, $path;
 	}
-	print "------------\n";
 }
 
 ##############################################################################
@@ -371,8 +373,24 @@ sub loadCreateConfig {
 
 sub loadDeleteConfig {
 	my $tab = shift;
-	foreach (@$tab) {
-		deleteKey($_);
+	my @deleteKey;
+	foreach (@$tab) {deleteKey($_, \@deleteKey);}
+	my $sizeMax = 0;
+	my $sizeMin = ($deleteKey[0] =~ tr/\//\//);
+	foreach (@deleteKey) {
+		my $tmpSize = ($_ =~ tr/\//\// );
+		$sizeMax = $tmpSize if($tmpSize >= $sizeMax);
+		$sizeMin = $tmpSize if($tmpSize <= $sizeMin);
+	}
+	# print "MAX\t$sizeMax\nMIN\t$sizeMin\n";
+	while($sizeMax >= $sizeMin) {
+		my @sTab = grep { ($_ =~ tr/\//\//) == $sizeMax } @deleteKey;
+		foreach (@sTab) {
+			my ($root, $key) = _transformRegistryString($_);
+			print "Delete $_\n";
+			_deleteKey($root, $key);
+		}
+		--$sizeMax;
 	}
 }
 
