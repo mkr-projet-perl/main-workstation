@@ -293,23 +293,6 @@ sub deleteKey {
 				deleteKey("$path/$subName", $deleteKey);
 			}
 		}
-		# else {
-			# if($path =~ m/(.+?)\/(.+)\/(.*)/) {
-				# my $root = $_rootRegistryKey->{$1};
-				# my $sKey = $2;
-				# my $dKey = $3;
-				# $sKey =~ s/\//\\\\/g;
-				# if(my $sub_opened_key = _openKey($root, $sKey, Win32API::Registry::KEY_ALL_ACCESS|KEY_WOW64_64KEY)) {
-					# # print "Root $root\n";
-					# # print "sKey $sKey\n";
-					# # print "dKey $dKey\n";
-					# # print "path $path\n";
-					# # _deleteKey($sub_opened_key, $dKey);
-					# # push @$deleteKey, $path;
-					# _closeKey($sub_opened_key);
-				# }
-			# }
-		# }
 		_closeKey($opened_key);
 		push @$deleteKey, $path;
 	}
@@ -323,20 +306,40 @@ sub deleteKey {
 ##############################################################################
 ##############################################################################
 
-#Cette fonction prend en paramètre une table de hachage et le nom du fichier a créer.
-sub makeConfig {
-	my $ref = shift;
+sub _createConfigFile {
 	my $filename = shift;
-	my $json = to_json($ref, {pretty => 1, utf8 => 1});
+	my $content = shift;
 	
 	if(open(FILE, '>:encoding(UTF-8)', $filename)) {
-		print FILE $json;
+		print FILE $content;
 		close(FILE);
 		return 1;
 	} else {
 		print "erreur $!\n";
 	}
 	return 0;
+}
+
+#Cette fonction prend en paramètre une table de hachage et le nom du fichier a créer.
+sub makeCreateConfig {
+	my $ref = shift;
+	my $filename = shift;
+	my $json = to_json($ref, {pretty => 1, utf8 => 1});
+	
+	return _createConfigFile($filename, $json);
+}
+
+sub makeDeleteConfig {
+	my $ref = shift;
+	my $filename = shift;
+	
+	my @tab = sort({ ($a =~ tr/\//\//) <=> ($b =~ tr/\//\//) or $a cmp $b } keys(%$ref));
+	foreach my $hKey (@tab) {
+		@tab = grep { $_ eq $hKey || index($_, $hKey) != 0 } @tab;
+	}
+	
+	my $json = to_json(\@tab, {pretty => 1, utf8 => 1});
+	return _createConfigFile($filename, $json);
 }
 
 #Cette fonction lit un fichier config et retourne le json décodé associé

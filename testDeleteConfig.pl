@@ -6,36 +6,16 @@ use Registre;
 my $time = time;
 my $test = 
 {
-	'key1/sKey1' => 
-	{
-		'valueName1' => 
-			{
-				'type' => 'REG_SZ',
-				'data' => 'data content'
-			},
-		'valueName2' =>
-			{
-				'type' => 'REG_SZ',
-				'data' => 'data content2'
-			}
-	},
-	'key1/sKey2' =>
-	{
-		'valueName3' =>
-			{
-				'type' => 'REG_SZ',
-				'data' => 'data content3'
-			},
-		'valueName4' =>
-			{
-				'type' => 'REG_SZ',
-				'data' => 'data content4'
-			},
-	}
+	'a/b/c/d' => {},
+	'a/b/c' => {},
+	'a' => {},
+	'e/f' => {},
+	'e/f/g' => {},
+	'h/i/j/k' => {},
 };
 my $filename = $ARGV[0] || "C:\\Users\\zen\\Desktop\\test.txt";
 print "Create registry config file...\n";
-Registre::makeCreateConfig($test, $filename);
+Registre::makeDeleteConfig($test, $filename);
 $time = time - $time;
 print "Config file created\n";
 print "Running time $time secondes\n";
