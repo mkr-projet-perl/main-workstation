@@ -8,8 +8,8 @@ use FileTools;
 my $refDiffScan = Store::retrieve_data(Store::MAKE_CONFIG_FILE_SYSTEM);
 my $refDiffFile = Store::retrieve_data(Store::MAKE_CONFIG_REGISTRY);
 
-if(Registre::makeCreateConfig($refDiffScan->{'news'}) && 
-	FileTools::makeCreateConfig($refDiffFile->{'new'})) {
+if(Registre::makeCreateConfig($refDiffScan->{'news'}, Store::DIR) && 
+	FileTools::makeCreateConfig($refDiffFile->{'new'}, Store::DIR)) {
 	
 	print "Fichier prêt au déploiement\n";
 		

@@ -99,11 +99,13 @@ sub diff {
 }
 
 sub makeCreateConfig {
-	
+	my $ref = shift;
+	my $filename = shift;
 }
 
 sub makeDeleteConfig {
-	
+	my $ref = shift;
+	my $filename = shift;
 }
 
 1;
