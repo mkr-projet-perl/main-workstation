@@ -1,7 +1,7 @@
 #!C:\Dwimperl\perl\bin\perl -w
 use strict;
 use Data::Dumper;
-use Config;
+use MyConfig;
 
 my $test = 
 {
@@ -71,7 +71,7 @@ my $test =
 			},
 	},
 };
-Config::loadCreateConfigRegistry($test);
+MyConfig::loadCreateConfigRegistry($test);
 
 $test = 
 [
@@ -81,7 +81,7 @@ $test =
 
 my $time = time;
 print "Load config...\n";
-Config::loadDeleteConfigRegistry($test);
+MyConfig::loadDeleteConfigRegistry($test);
 $time = time - $time;
 print "Config loaded\n";
 print "Running time $time secondes\n";

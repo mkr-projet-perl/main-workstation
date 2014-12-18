@@ -281,7 +281,7 @@ sub createOrReplaceKey {
 	}
 }
 
-sub deleteKey {
+sub selectDeletedKey {
 	my $path = shift;
 	my $deleteKey = shift;
 	$path =~ s/\/+$//;
@@ -290,11 +290,20 @@ sub deleteKey {
 		if(my $nbSubKey = _subKeyCounter($opened_key)) {
 			foreach (0..$nbSubKey-1) {
 				my $subName = _enumSubKeyName($opened_key, $_);
-				deleteKey("$path/$subName", $deleteKey);
+				selectDeletedKey("$path/$subName", $deleteKey);
 			}
 		}
 		_closeKey($opened_key);
 		push @$deleteKey, $path;
+	}
+}
+
+sub deleteKey {
+	my $refTab = shift;
+	foreach (@$refTab) {
+		my ($root, $key) = _transformRegistryString($_);
+		print "Delete $_\n";
+		_deleteKey($root, $key);
 	}
 }
 

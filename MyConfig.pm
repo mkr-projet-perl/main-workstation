@@ -1,7 +1,9 @@
 #!C:\Dwimperl\perl\bin\perl
-package Config;
+package MyConfig;
 use strict;
 use Data::Dumper;
+use File::Path qw(mkpath);
+use File::Copy qw(copy);
 use Registre;
 use FileTools;
 use EnvTools;
@@ -78,7 +80,7 @@ sub loadCreateConfigRegistry {
 	while($sizeMax >= $sizeMin) {
 		my @sTab = grep { ($_ =~ tr/\//\//) == $sizeMax } keys(%$hash);
 		foreach (@sTab) {
-			# print "$_\n";
+			print "$_\n";
 			Registre::createOrReplaceKey($_, $hash->{$_});
 		}
 		--$sizeMax;
@@ -88,7 +90,7 @@ sub loadCreateConfigRegistry {
 sub loadDeleteConfigRegistry {
 	my $tab = shift;
 	my @deleteKey;
-	foreach (@$tab) {Registre::deleteKey($_, \@deleteKey);}
+	foreach (@$tab) {Registre::selectDeletedKey($_, \@deleteKey);}
 	my $sizeMax = 0;
 	my $sizeMin = ($deleteKey[0] =~ tr/\//\//);
 	foreach (@deleteKey) {
@@ -99,11 +101,7 @@ sub loadDeleteConfigRegistry {
 	# print "MAX\t$sizeMax\nMIN\t$sizeMin\n";
 	while($sizeMax >= $sizeMin) {
 		my @sTab = grep { ($_ =~ tr/\//\//) == $sizeMax } @deleteKey;
-		foreach (@sTab) {
-			my ($root, $key) = _transformRegistryString($_);
-			print "Delete $_\n";
-			Registre::_deleteKey($root, $key);
-		}
+		Registre::deleteKey(\@sTab);
 		--$sizeMax;
 	}
 }

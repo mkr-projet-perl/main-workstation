@@ -1,7 +1,7 @@
 #!C:\Dwimperl\perl\bin\perl -w
 use strict;
 use Data::Dumper;
-use Config;
+use MyConfig;
 
 my $time = time;
 my $test = 
@@ -15,14 +15,14 @@ my $test =
 };
 my $filename = $ARGV[0] || "C:\\Users\\zen\\Desktop\\test.txt";
 print "Create registry config file...\n";
-Config::makeDeleteConfigRegistry($test, $filename);
+MyConfig::makeDeleteConfigRegistry($test, $filename);
 $time = time - $time;
 print "Config file created\n";
 print "Running time $time secondes\n";
 
 print "Read registry config file...\n";
 $time = time;
-my $new = Config::readConfig($filename);
+my $new = MyConfig::readConfig($filename);
 print Dumper($new);
 $time = time - $time;
 print "Config file read\n";

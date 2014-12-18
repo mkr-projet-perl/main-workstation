@@ -2,8 +2,6 @@
 package FileTools;
 use strict;
 use Data::Dumper;
-use File::Path;
-use File::Copy;
 use Store;
 use EnvTools;
 use JSON;
