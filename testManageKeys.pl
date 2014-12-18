@@ -4,9 +4,8 @@ use Data::Dumper;
 use Registre;
 use Win32API::Registry 0.24;
 
-
-my $not_existing_path = "LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/test";
-my $existing_path = $not_existing_path;
+my $sPath = Registre::PATH_32_CURRENT_VERSION."/Uninstall/test"
+my @tPath = qw($sPath);
 my $values = 
 {
 	'value1' =>
@@ -26,30 +25,16 @@ my $values =
 	}
 };
 
-print "Create not existing registry key\n";
+print "Create registry key\n";
 print "--------------------------------\n";
 
 print "Create registry key running...\n";
 my $time = time;
-my $createdKey = Registre::createOrReplaceKey($not_existing_path);
+my $createdKey = Registre::createOrReplaceKey($sPath);
 $time = time - $time;
 print "Does the registry key is created ?\tYes\n" if($createdKey);
 print "Does the registry key is updated ?\tYes\n" if(!$createdKey);
-print Dumper(Registre::scanRegistry($not_existing_path));
-
-print "Running time $time secondes\n";
-
-print "###\n\n";
-print "Create existing registry key \n";
-print "-------------------------------\n";
-
-print "Create registry key running...\n";
-$time = time;
-$createdKey = Registre::createOrReplaceKey($existing_path, $values);
-$time = time - $time;
-print "Does the registry key is created ?\tYes\n" if($createdKey);
-print "Does the registry key is updated ?\tYes\n" if(!$createdKey);
-print Dumper(Registre::scanRegistry($existing_path));
+print Dumper(Registre::scanRegistry(\@tPath));
 
 print "Running time $time secondes\n";
 

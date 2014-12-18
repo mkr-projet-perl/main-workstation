@@ -6,9 +6,19 @@ use Win32::TieRegistry;
 use Data::Dumper;
 use JSON;
 
-sub KEY_WOW64_64KEY () { 0x0100 }
-sub KEY_READ_ALL () { Win32API::Registry::KEY_READ|KEY_WOW64_64KEY }
-sub KEY_WRITE_ALL () { Win32API::Registry::KEY_WRITE|KEY_WOW64_64KEY }
+########################################################################
+#		Constante d'accès aux clés de registre 32 bits et 64 bits      #
+########################################################################
+use constant KEY_WOW64_64KEY => 0x0100;
+use constant KEY_READ_ALL => Win32API::Registry::KEY_READ|KEY_WOW64_64KEY;
+use constant KEY_WRITE_ALL => Win32API::Registry::KEY_WRITE|KEY_WOW64_64KEY;
+
+########################################################################
+#		Constante représentant les chemins de registre à explorer      #
+########################################################################
+use constant PATH_32_CURRENT_VERSION => "LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion";
+use constant PATH_64_CURRENT_VERSION => "LMachine/SOFTWARE/Wow6432Node/Microsoft/Windows/CurrentVersion";
+use constant PATH_EXTENSION => "LMachine/SOFTWARE/Classes";
 
 sub _openKey {
 	my ($root, $key, $key_rights) = @_;
@@ -171,15 +181,23 @@ sub _compareRegistryKey {
 }
 
 sub scanRegistry {
-	my $path = shift || "LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion";
-	my ($root, $key) = _transformRegistryString($path);
+	my $listPath = shift;
 	my %res;
-	print "$root\t$key\n";
-	if(defined $root) {
-		_scanRegistry($root, $key, \%res, $path);
+	if(!defined $listPath) {
+		my ($root, $key) = _transformRegistryString(PATH_32_CURRENT_VERSION);
+		print "$root\t$key\n";
+		_scanRegistry($root, $key, \%res, PATH_32_CURRENT_VERSION);
 	} else {
-		print "$path n'est pas une clé valide\n";
-	}
+		foreach my $path (@$listPath) {
+				my ($root, $key) = _transformRegistryString($path);
+				print "$root\t$key\n";
+				if(defined $root) {
+					_scanRegistry($root, $key, \%res, $path);
+				} else {
+					print "$path n'est pas une clé valide\n";
+				}
+			}
+		}
 	return \%res;
 }
 
@@ -247,9 +265,6 @@ sub _transformRegistryToCreatingKey {
 	return shift =~ m/(.+)\/(.*)/;
 }
 
-#return 1: si clé créé
-#return 0: si clé modifiée car existante
-#return -1: si impossible de créer ou modifier
 sub createOrReplaceKey {
 	my $path = shift;
 	my $values = shift || {};

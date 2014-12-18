@@ -5,16 +5,16 @@ use Registre;
 use FileTools;
 use Store;
 
-my $program = $ARGV[0] or die "Aucun program $!\n";
-my $drive = $ARGV[1] or die "Aucun lecteur mis en paramètre$!\n";
-my $scanPart = "LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion";
+my $program = $ARGV[0] or die "Aucun program\n";
+my $drive = $ARGV[1] or die "Aucun lecteur mis en paramètre\n";
+my @scanPart = qw(Registre::PATH_32_CURRENT_VERSION Registre::PATH_64_CURRENT_VERSION Registre::PATH_EXTENSION);
 my $forbiddenDir = ["C:/Windows"];
 
 print "Registry's scan before installation...\n";
 print "----------------------------------------\n";
 
 my $time = time;
-my $scanBeforeInstallation = Registre::scanRegistry($scanPart);
+my $scanBeforeInstallation = Registre::scanRegistry(\@scanPart);
 $time = time - $time;
 print "Running time $time secondes\n";
 print "\n\n";
@@ -39,7 +39,7 @@ print "###\n\n";
 print "Registry's scan after installation...\n";
 print "----------------------------------------\n";
 
-my $scanAfterInstallation = Registre::scanRegistry($scanPart);
+my $scanAfterInstallation = Registre::scanRegistry(\@scanPart);
 $time = time - $time;
 print "Running time $time secondes\n";
 print "\n\n";
@@ -76,7 +76,7 @@ print "Key created ".keys(%{$diffScan->{'news'}})."\n";
 print "Key deleted ".keys(%{$diffScan->{'delete'}})."\n";
 print "Key updated ".keys(%{$diffScan->{'update'}})."\n";
 
-Store::store_data($diffScan, Store::DIFF_FILE_SYSTEM);
-Store::store_data($diffFile, Store::DIFF_REGISTRY);
+Store::store_data($diffScan, Store::DIFF_REGISTRY);
+Store::store_data($diffFile, Store::DIFF_FILE_SYSTEM);
 
 __END__

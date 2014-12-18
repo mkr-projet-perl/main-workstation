@@ -8,6 +8,7 @@ use Registre;
 use FileTools;
 use EnvTools;
 use Store;
+use JSON;
 
 ##############################################################################
 ##############################################################################
@@ -17,7 +18,7 @@ use Store;
 ##############################################################################
 ##############################################################################
 
-use constant TMP_DIR => Store::TEMP_DIR;
+use constant TMP_DIR 		=> Store::TEMP_DIR;
 
 sub _createConfigFile {
 	my $filename = shift;
@@ -33,7 +34,6 @@ sub _createConfigFile {
 	return 0;
 }
 
-#Cette fonction prend en paramètre une table de hachage et le nom du fichier a créer.
 sub makeConfig {
 	my $ref = shift;
 	my $filename = shift;

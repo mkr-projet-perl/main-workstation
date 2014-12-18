@@ -4,13 +4,13 @@ use Data::Dumper;
 use Registre;
 
 my $program = $ARGV[0] || "C:\\Users\\romain\\Downloads\\npp.6.6.9.Installer.exe";
-my $scanningPart = "LMachine/SOFTWARE/Wow6432Node/Microsoft/Windows/CurrentVersion/Uninstall";
+my @scanPart = (Registre::PATH_32_CURRENT_VERSION, Registre::PATH_64_CURRENT_VERSION, Registre::PATH_EXTENSION);
 
-print "Scan of registry before installation...\n";
+print "Registry's scan before installation...\n";
 print "----------------------------------------\n";
 
 my $time = time;
-my $scanBeforeInstallation = Registre::scanRegistry($scanningPart);
+my $scanBeforeInstallation = Registre::scanRegistry(\@scanPart);
 $time = time - $time;
 print "Running time $time secondes\n";
 print "\n\n";
@@ -23,11 +23,11 @@ $time = time - $time;
 print "Running time $time secondes\n";
 print "\n\n";
 
-print "Scan of registry after installation...\n";
+print "Registry's scan after installation...\n";
 print "----------------------------------------\n";
 
 $time = time;
-my $scanAfterInstallation = Registre::scanRegistry($scanningPart);
+my $scanAfterInstallation = Registre::scanRegistry(\@scanPart);
 $time = time - $time;
 print "Running time $time secondes\n";
 print "\n\n";

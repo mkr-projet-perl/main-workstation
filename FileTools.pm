@@ -2,18 +2,14 @@
 package FileTools;
 use strict;
 use Data::Dumper;
-use Store;
 use EnvTools;
-use JSON;
 
 my $mForbiddenDir = ["C:/Windows", "C:/Users", "C:/Recovery"];
 
 sub _containsInForbidden {
 	my $dir = shift;
 	my $forbiddenDir = shift;
-	my $isIn = 0;
-	$isIn = 1 if(grep{ $_ eq $dir } @$forbiddenDir);
-	return $isIn;
+	return grep{ $_ eq $dir } @$forbiddenDir;
 }
 
 sub _giveFiles {
@@ -29,11 +25,11 @@ sub _giveFiles {
 				foreach (@files) {
 					$dir =~ s/\/+$//g;
 					my $path = $dir.'/'.$_;
-					chomp $path;
 					if (-d $path){
-						if($path !~ /^C:\/.*?\..*|^C:\/.*?\$.*|^C:\/Users/) {
-							if(!defined $forbiddenDir || !_containsInForbidden($path, $forbiddenDir)) {
-								_giveFiles($path, $hash);
+						if($path !~ /^C:\/.*?\..*|^C:\/.*?\$.*/) {
+							print $path."\n" if($path eq "C:/Program Files (x86)/Steam");
+							if(!_containsInForbidden($path, $forbiddenDir)) {
+								_giveFiles($path, $hash, $forbiddenDir);
 							}
 						}
 					} elsif(-f $path) {

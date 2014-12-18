@@ -76,7 +76,7 @@ MyConfig::loadCreateConfigRegistry($test);
 $test = 
 [
 	'LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/key1',
-	'LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/key2/sKey54564/ssKey486464a446'
+	'LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/key2'
 ];
 
 my $time = time;

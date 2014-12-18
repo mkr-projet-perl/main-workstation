@@ -5,14 +5,14 @@ use Registre;
 use FileTools;
 
 my $program = $ARGV[0] || "C:\\Users\\romain\\Downloads\\npp.6.6.9.Installer.exe";
-my $scanPart = "LMachine/SOFTWARE/Microsoft/Windows/CurrentVersion";
+my @scanPart = (Registre::PATH_32_CURRENT_VERSION, Registre::PATH_64_CURRENT_VERSION, Registre::PATH_EXTENSION);
 my $forbiddenDir = ["C:/Windows"];
 
 print "Scan of Registry before installation...\n";
 print "----------------------------------------\n";
 
 my $time = time;
-my $scanBeforeInstallation = Registre::scanRegistry($scanPart);
+my $scanBeforeInstallation = Registre::scanRegistry(\@scanPart);
 $time = time - $time;
 print "Running time $time secondes\n";
 print "\n\n";
@@ -37,7 +37,7 @@ print "###\n\n";
 print "Scan of registry after installation...\n";
 print "----------------------------------------\n";
 
-my $scanAfterInstallation = Registre::scanRegistry($scanPart);
+my $scanAfterInstallation = Registre::scanRegistry(\@scanPart);
 $time = time - $time;
 print "Running time $time secondes\n";
 print "\n\n";

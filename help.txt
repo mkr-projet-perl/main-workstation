@@ -1,0 +1,50 @@
+testDiffRegistry.pl
+	DO: 		Scan le registre avant et après une installation;
+	$ARGV[0]	Chemin de l'exe
+
+testFileTools.pl
+	DO:			Scan le système de fichier avant et après installation
+	$ARGV[0]	Chemin de l'exe
+	
+testFullInstall.pl
+	DO:			Scan le registre et les fichiers avant et après l'installation
+	$ARVG[0]	Chemin de l'exe
+	
+testLoadCreateConfig.pl
+	DO:			Lit une table de hachage et créés les clés de registre
+
+testLoadDeleteConfig.pl
+	DO:			Lit une table de hachage et créés les clé de registre puis les supprime
+	
+testManageKeys.pl
+	DO:			Test la création de clé de registre
+	
+testScanRegistry.pl
+	DO:			Scan différentes parties du registre
+
+------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+
+install.pl
+	DO:			Scan le registre et les fichiers avant et après installation puis
+				stocke les résultats dans des fichiers storable dans le dossier ./Saves
+				Ceci est la première étape des trois étapes du déploiement
+				
+warm-up.pl
+	DO:			Effectue une copie des fichiers précèdemment créé par install.pl dans le
+				dossier ./Saves.
+				Ceci est la deuxième étape.
+				
+deploy.pl
+	DO:			Lit les fichiers de stockage créés par warm-up.pl, en extrait les données
+				et créé deux fichiers de configuration. Ce sont ces fichiers qui seront transférés
+				côté esclave avec leur script de déploiement respectif.
+				
+deployConfigFileSystem.pl
+	DO:			C'est un script de déploiement. Il va transférer les fichiers mis dans C:/Temp vers 
+				leur chemin respectif (c'est-à-dire les chemins d'installation du poste maître).
+	$ARGV[0]	Le fichier de configuration correspondant au system de fichiers.
+	
+deployConfigRegistry.pl
+	DO:			C'est un script de déploiement. Il va créer les clés de registre.
+	$ARGV[0]	Le fichier de configuration correspondant aux clés de registre.
