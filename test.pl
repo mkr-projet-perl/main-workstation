@@ -4,18 +4,16 @@ use Data::Dumper;
 use Registre;
 use FileTools;
 use EnvTools;
+use File::Path;
 
-my $ref = 
-{
-	'bite' 				=> {},
-	'C:/Windows'			=> {},
-	'C:/Users/zen/eded/eded/e'	=> {},
-	'C:/Windows/ded/fefef/ded'	=> {}
-};
+my $files = FileTools::giveFilesInDirectory('C:/Program Files (x86)/SFR/Mediacenter Evolution');
+print Dumper($files);
 
+FileTools::makeCreateConfig($files, 'C:/Users/romain/Desktop/test.txt');
 
-
-EnvTools::encodeEnv($ref);
-# print Dumper($ref);
+if(my $config = Registre::readConfig('C:/Users/romain/Desktop/test.txt')) {
+	print Dumper($config);
+	FileTools::loadCreateConfig($config);
+}
 
 __END__

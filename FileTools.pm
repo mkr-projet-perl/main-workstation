@@ -1,7 +1,14 @@
 #!C:\Dwimperl\perl\bin\perl -w
 package FileTools;
 use strict;
+use Data::Dumper;
+use File::Path;
+use File::Copy;
+use Store;
+use EnvTools;
 use JSON;
+
+my $mForbiddenDir = ["C:/Windows", "C:/Users", "C:/Recovery"];
 
 sub _containsInForbidden {
 	my $dir = shift;
@@ -26,13 +33,14 @@ sub _giveFiles {
 					my $path = $dir.'/'.$_;
 					chomp $path;
 					if (-d $path){
-						if($path !~ /^C:\/.*?\..*|^C:\/.*?\$.*|^C:\/Users\/.*?\/AppData\/Local|^C:\/Users\/.*?\/AppData\/LocalLow/) {
+						if($path !~ /^C:\/.*?\..*|^C:\/.*?\$.*|^C:\/Users/) {
 							if(!defined $forbiddenDir || !_containsInForbidden($path, $forbiddenDir)) {
 								_giveFiles($path, $hash);
 							}
 						}
 					} elsif(-f $path) {
-						push @list, $path;
+						EnvTools::transformVarToEnv(\$path);
+						push @list, $path;			
 					}
 				}
 			} else {
@@ -40,13 +48,19 @@ sub _giveFiles {
 			}
 	} elsif(-f $dir) {
 		push @list, $dir;
+		EnvTools::transformVarToEnv(\$dir);
 	}
+	EnvTools::transformVarToEnv(\$dir);
 	$hash->{$dir} = \@list;
 }
 
 sub giveFilesInDirectory {
 	my $dir = shift;
 	my $forbiddenDir = shift;
+	
+	push @$forbiddenDir, @$mForbiddenDir if(defined $forbiddenDir);
+	$forbiddenDir = $mForbiddenDir if(!defined $forbiddenDir);
+	
 	my $hash = {};
 	if(ref($dir) eq "ARRAY") {
 		foreach my $crt_path (@$dir) {
@@ -97,36 +111,6 @@ sub diff {
 	$hash{'new'} = \%new;
 	$hash{'delete'} = \%delete;
 	return \%hash;
-}
-
-sub _createConfigFile {
-	my $filename = shift;
-	my $content = shift;
-	
-	if(open(FILE, '>:encoding(UTF-8)', $filename)) {
-		print FILE $content;
-		close(FILE);
-		return 1;
-	} else {
-		print "erreur $!\n";
-	}
-	return 0;
-}
-
-sub makeCreateConfig {
-	my $ref = shift;
-	my $filename = shift;
-	
-	my $json = to_json($ref, {pretty => 1, utf8 => 1});
-	return _createConfigFile($filename, $json);
-}
-
-sub makeDeleteConfig {
-	my $ref = shift;
-	my $filename = shift;
-	
-	my $json = to_json($ref, {pretty => 1, utf8 => 1});
-	return _createConfigFile($filename, $json);
 }
 
 1;

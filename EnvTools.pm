@@ -1,40 +1,53 @@
 #!C:\Dwimperl\perl\bin\perl -w
 package EnvTools;
 use strict;
+use Data::Dumper;
 
-sub _transformVarToEnv {
+my $_env =
+{
+	$ENV{'USERPROFILE'} 		=> '%USERPROFILE%',
+	$ENV{'WINDIR'}				=> '%WINDIR%',
+	$ENV{'ProgramData'}			=> '%PROGRAMDATA%',
+	$ENV{'ProgramFiles'}		=> '%PROGRAMFILE%',
+	$ENV{'ProgramFiles(x86)'}	=> '%PROGRAMFILE86%',
+	$ENV{'TEMP'}				=> '%TEMP%',
+	$ENV{'USERNAME'}			=> '%USERNAME%'
+};
+
+foreach (keys(%$_env)) {
+	delete $_env->{$_} if('' eq $_);
+}
+
+sub _getEnv {
 	my $var = shift;
-	my @tabs;
-	foreach (keys(%ENV)) {
-		my $e = $ENV{$_};
-		$e =~ s/\\/\//g;
-		if(index($$var, $e) == 0) {
-			push @tabs, $e;
+	return $_env->{$var};
+}
+
+sub transformVarToEnv {
+	my $var = shift;
+	my $tmp_var = $$var;
+	$tmp_var =~ s/\//\\/g;
+	foreach (keys(%$_env)) {
+		if(index($tmp_var,$_)==0) {
+			my $n_var = _getEnv(substr($tmp_var, 0, length($_)));
+			substr($$var, 0, length($_)) = $n_var;
+			last;
 		}
 	}
-	my $value = (sort({ !(($a =~ tr/\//\//) <=> ($b =~ tr/\//\//)) } @tabs))[0];
-	print "$value\n";
-	
 }
 
-sub _transformEnvToVar {
+sub transformEnvToVar {
 	my $var = shift;
-	foreach (keys(%ENV)) {
-		if(index($var, $_) == 0) {
-			substr($var, 0, length($_) -1) = $_;
+	my $tmp_var = $$var;
+	$tmp_var =~ s/\//\\/g;
+	foreach (keys(%$_env)) {
+		if(index($tmp_var,$_env->{$_})==0) {
+			my $n_var = $_;
+			$n_var =~ s/\\/\//g;
+			substr($$var, 0, length($_env->{$_})) = $n_var;
+			last;
 		}
 	}
-}
-
-
-sub encodeEnv {
-	my $ref = shift;
-	map { _transformVarToEnv(\$_) } keys(%$ref);
-}
-
-sub decodeEnv {
-	my $ref = shift;
-	map { _transformEnvToKeyVar($_) } keys(%$ref);
 }
 
 1;
