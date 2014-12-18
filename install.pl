@@ -8,6 +8,10 @@ use File::Path qw(mkpath);
 
 my $program = $ARGV[0] or die "Aucun program\n";
 my $drive = $ARGV[1] or die "Aucun lecteur mis en paramètre\n";
+my @tDrive = ($drive);
+if($drive != "C:/") {
+	push @tDrive, "C:/";
+}
 my @scanPart = (Registre::PATH_32_CURRENT_VERSION, Registre::PATH_64_CURRENT_VERSION, Registre::PATH_EXTENSION);
 my $forbiddenDir = [""];
 
@@ -24,7 +28,7 @@ print "File system's scan before installation...\n";
 print "----------------------------------------\n";
 
 $time = time;
-my $fileBeforeInstallation = FileTools::giveFilesInDirectory($drive, $forbiddenDir);
+my $fileBeforeInstallation = FileTools::giveFilesInDirectory(\@tDrive, $forbiddenDir);
 $time = time - $time;
 print "Running time $time secondes\n";
 print "\n\n";
@@ -49,7 +53,7 @@ print "File system's scan after installation...\n";
 print "----------------------------------------\n";
 
 $time = time;
-my $fileAfterInstallation = FileTools::giveFilesInDirectory($drive, $forbiddenDir);
+my $fileAfterInstallation = FileTools::giveFilesInDirectory(\@tDrive, $forbiddenDir);
 $time = time - $time;
 print "Running time $time secondes\n";
 print "\n\n";
