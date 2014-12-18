@@ -79,7 +79,7 @@ sub loadCreateConfigRegistry {
 		my @sTab = grep { ($_ =~ tr/\//\//) == $sizeMax } keys(%$hash);
 		foreach (@sTab) {
 			# print "$_\n";
-			createOrReplaceKey($_, $hash->{$_});
+			Registre::createOrReplaceKey($_, $hash->{$_});
 		}
 		--$sizeMax;
 	}
@@ -88,7 +88,7 @@ sub loadCreateConfigRegistry {
 sub loadDeleteConfigRegistry {
 	my $tab = shift;
 	my @deleteKey;
-	foreach (@$tab) {deleteKey($_, \@deleteKey);}
+	foreach (@$tab) {Registre::deleteKey($_, \@deleteKey);}
 	my $sizeMax = 0;
 	my $sizeMin = ($deleteKey[0] =~ tr/\//\//);
 	foreach (@deleteKey) {
@@ -102,7 +102,7 @@ sub loadDeleteConfigRegistry {
 		foreach (@sTab) {
 			my ($root, $key) = _transformRegistryString($_);
 			print "Delete $_\n";
-			_deleteKey($root, $key);
+			Registre::_deleteKey($root, $key);
 		}
 		--$sizeMax;
 	}
