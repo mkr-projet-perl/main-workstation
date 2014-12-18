@@ -12,8 +12,9 @@ if(MyConfig::makeConfig($refDiffScan->{'news'}, Store::DIR.'/'.Store::MAKE_CONFI
 	
 	print "Fichier prêt au déploiement\n";
 		
-}
+} else {
 print "Les fichiers de configuration ne sont pas créés\n";
 print "Vérifier les chemins ! \n";
+}
 
 __END__

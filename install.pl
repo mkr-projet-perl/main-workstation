@@ -4,11 +4,12 @@ use Data::Dumper;
 use Registre;
 use FileTools;
 use Store;
+use File::Path qw(mkpath);
 
 my $program = $ARGV[0] or die "Aucun program\n";
 my $drive = $ARGV[1] or die "Aucun lecteur mis en paramètre\n";
-my @scanPart = qw(Registre::PATH_32_CURRENT_VERSION Registre::PATH_64_CURRENT_VERSION Registre::PATH_EXTENSION);
-my $forbiddenDir = ["C:/Windows"];
+my @scanPart = (Registre::PATH_32_CURRENT_VERSION, Registre::PATH_64_CURRENT_VERSION, Registre::PATH_EXTENSION);
+my $forbiddenDir = [""];
 
 print "Registry's scan before installation...\n";
 print "----------------------------------------\n";
@@ -75,6 +76,11 @@ print "Directory created ".keys(%{$diffFile->{'new'}})."\n";
 print "Key created ".keys(%{$diffScan->{'news'}})."\n";
 print "Key deleted ".keys(%{$diffScan->{'delete'}})."\n";
 print "Key updated ".keys(%{$diffScan->{'update'}})."\n";
+
+eval{mkpath "./".Store::DIR};
+if($@) {
+	print "Coudn't create ./".Store::DIR.": $@\n";
+}
 
 Store::store_data($diffScan, Store::DIFF_REGISTRY);
 Store::store_data($diffFile, Store::DIFF_FILE_SYSTEM);

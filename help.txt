@@ -29,6 +29,8 @@ install.pl
 	DO:			Scan le registre et les fichiers avant et après installation puis
 				stocke les résultats dans des fichiers storable dans le dossier ./Saves
 				Ceci est la première étape des trois étapes du déploiement
+	$ARGV[0]	Chemin de l'exe
+	$ARGV[1]	Le lecteur choisie pour l'installation (C:/ ou D:/ ou ...)
 				
 warm-up.pl
 	DO:			Effectue une copie des fichiers précèdemment créé par install.pl dans le

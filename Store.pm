@@ -2,30 +2,32 @@
 package Store;
 
 use strict;
-use Storable;
+use Storable 'nstore';
 
-use constant DIFF_FILE_SYSTEM 			=> "DiffFileSystem";
-use constant DIFF_REGISTRY 				=> "DiffRegistry";
-use constant COPY_DIFF_FILE_SYSTEM 		=> "CopyDiffFileSystem";
-use constant COPY_DIFF_REGISTRY 		=> "CopyDiffRegistry";
-use constant MAKE_CONFIG_FILE_SYSTEM 	=> "ConfigFileSystem";
-use constant MAKE_CONFIG_REGISTRY 		=> "ConfigRegistry";
-use constant IPS_FILE 					=> "Ips";
+use constant DIFF_FILE_SYSTEM 			=> "DiffFileSystem.txt";
+use constant DIFF_REGISTRY 				=> "DiffRegistry.txt";
+use constant COPY_DIFF_FILE_SYSTEM 		=> "CopyDiffFileSystem.txt";
+use constant COPY_DIFF_REGISTRY 		=> "CopyDiffRegistry.txt";
+use constant MAKE_CONFIG_FILE_SYSTEM 	=> "ConfigFileSystem.txt";
+use constant MAKE_CONFIG_REGISTRY 		=> "ConfigRegistry.txt";
+use constant IPS_FILE 					=> "Ips.txt";
 use constant DIR 						=> "Saves";
 use constant TEMP_DIR 					=> "C:/Temp";
 
 sub store_data {
 	my ($ref, $file) = @_;
-	store($ref, DIR.'/'.$file);
+	Storable::nstore($ref, DIR.'/'.$file);
 }
 
 sub retrieve_data {
 	my $file = shift;
 	my $newRef;
 	
-	$newRef = retrieve($file);
+	my $path = DIR.'/'.$file;
+	$newRef = Storable::retrieve($path);
 	
 	return $newRef;
 }
 
 1;
+__END__
